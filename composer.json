@@ -1,0 +1,28 @@
+{
+    "name": "nfaiz/pdoifx",
+    "description": "CodeIgniter 4 Informix Database Package",
+    "type": "library",
+    "keywords": [
+        "codeigniter",
+        "codeigniter4",
+        "debug",
+        "pdo",
+        "informix"
+    ],
+    "require": {
+        "nfaiz/dbtoolbar": "^0.9"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Nfaiz\\PdoIfx\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Noorulfaiz Ateman",
+            "homepage": "http://www.ukm.my/faiz",
+            "role": "Project Author"
+        }
+    ]
+}
