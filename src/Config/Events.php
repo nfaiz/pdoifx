@@ -6,9 +6,11 @@ use CodeIgniter\Events\Events;
 
 Events::on('pre_system', function () {
 
-    $config = config(PdoIfx::class);
+    $config = config('Toolbar');
 
-    if ($config->collect === true)
+    helper('ifx');
+
+    if (isset($config->ifxCollector) && $config->ifxCollector === true)
     {
         Events::on('PdoIfx', '\Nfaiz\PdoIfx\Collectors\Database::collect');
     }

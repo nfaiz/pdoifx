@@ -37,7 +37,7 @@ class Database extends BaseCollector
      *
      * @var string
      */
-    protected $title = 'Queries';
+    protected $title;
 
     /**
      * The query instances that have been collected
@@ -47,17 +47,27 @@ class Database extends BaseCollector
      */
     protected static $queries = [];
 
-
+    /**
+     * Constructor
+     */
     public function __construct()
     {
-        $config = config(PdoIfx::class);
+        $config = config('Toolbar');
 
-        $this->title = $config->tabTitle;
+        $this->title = $config->ifxTitle ?? 'Informix';
     }
 
+    /**
+     * The static method used during Events to collect
+     * data.
+     *
+     * @param Query $query
+     *
+     * @internal param $ array \CodeIgniter\Database\Query
+     */
     public static function collect(array $query)
     {
-        $config = config(Toolbar::class);
+        $config = config('Toolbar');
 
         // Provide default in case it's not set
         $max = $config->maxQueries ?: 100;
@@ -130,7 +140,26 @@ class Database extends BaseCollector
      */
     public function getTitleDetails(): string
     {
-        return  '(' . count(static::$queries) . ' Queries'  . ')';
+        $instances = [];
+
+        foreach (static::$queries as $query)
+        {
+            array_push($instances, $query['instance']);
+        }
+
+        return '(' . count(static::$queries) . ' Queries across ' .
+            ($countConnection = count(array_count_values($instances))) . ' Connection' . ($countConnection > 1 ? 's' : '') .
+        ')';
+    }
+
+    /**
+     * Does this collector have any data collected?
+     *
+     * @return boolean
+     */
+    public function isEmpty(): bool
+    {
+        return empty(static::$queries);
     }
 
     /**

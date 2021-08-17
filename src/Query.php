@@ -1409,24 +1409,19 @@ class Query
 
     private function triggerEvent(string $sql, $start, $end, $numRows = 0)
     {
-        $config = config('PdoIfx');
-
         $duration = number_format(($end - $start), 6);
 
-        if (isset($config->enableQueryLog) && $config->enableQueryLog === true)
-        {
-            $query = [
-                'sql' => $sql,
-                'start' => $start,
-                'end' => $end,
-                'duration' => number_format(($end - $start), 6),
-                'numRows' => $numRows,
-                'connectTime' => $this->connectTime,
-                'connectDuration' => $this->connectDuration,
-                'instance' => $this->instance,
-            ];
+        $query = [
+            'sql' => $sql,
+            'start' => $start,
+            'end' => $end,
+            'duration' => number_format(($end - $start), 6),
+            'numRows' => $numRows,
+            'connectTime' => $this->connectTime,
+            'connectDuration' => $this->connectDuration,
+            'instance' => $this->instance,
+        ];
 
-            Events::trigger('PdoIfx', $query);
-        }
+        Events::trigger('PdoIfx', $query);
     }
 }

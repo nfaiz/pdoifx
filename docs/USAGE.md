@@ -1,37 +1,41 @@
 # Usage
 
-## Configure DbGroup
+## Configure Database Connection
 
-Configure `DbGroup` property at `app/Config/PdoIfx.php`. E.g using **db_common** as `DbGroup`
+Database configuration is same like CodeIniter 4. See [here](https://www.codeigniter.com/user_guide/database/configuration.html) for more information.
 
-```php
-public $db_common = [
-    'host'     => 'host.domain.com',
-    'server'   => 'ids_server',
-    'database' => 'common_db',
-    'username' => 'testuser',
-    'password' => 'testpassword',
-    'service'  => '9800',
-    'protocol' => 'onsoctcp',
-    'EnableScrollableCursors' => 1,
-    'charset'   => 'utf8',
-    'collation' => 'utf8_general_ci',
-    'prefix'     => '', # optional
-    'db_locale' => 'en_us.1252', # optional
-    'client_locale' => 'en_us.1252', # optional
-];
+Refer [here](https://www.php.net/manual/en/ref.pdo-informix.connection.php#122191) for more information about PDO DNS.
+
+E.g if using `.env`
+
+```shell
+database.default.DSN = informix:host=host.domain.com;service=9800;database=default;server=product;protocol=onsoctcp;EnableScrollableCursors=1
+database.default.username = root
+database.default.password =
+database.default.DBPrefix =
+database.default.charset = utf8
+database.default.DBCollat = utf8_general_ci
 ```
 
-## Create Builder
+## Create Database Connection
 
-Builder can be created using `service('ifx', '<DbGroup>')`.
+Choose either one from two (2) methods to connect to PDO Informix database. .
 
-E.g
+E.g using `default` or `default2` for database connection. 
+
 ```php
-$builder = service('ifx', 'db_common');
+// method 1
+$builder = new \Nfaiz\PdoIfx\Query('default');
+$builder2 = new \Nfaiz\PdoIfx\Query('default2');
 
-$builder2 = service('ifx', 'db_common2');
+// method 2
+$builder = ifx_connect('default');
+$builder2 = ifx_connect('default2');
+
 ```
+
+Note: If no database connection is specified **$defaultGroup** value in `app/Config/Database.php` will be used.
+
 
 ## Methods
 

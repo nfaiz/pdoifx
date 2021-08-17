@@ -47,7 +47,7 @@ class Connection {
             die('Cannot the connect to Database with PDO. ' . $e->getMessage());
         }
 
-        $this->prefix = $config['prefix'];
+        $this->prefix = $config['DBPrefix'];
 
         return $pdo;
     }
@@ -59,11 +59,11 @@ class Connection {
      */
     private function getConfig(): array
     {
-        $pdoIfxConfig = config('PdoIfx');
+        $dbConfig = config('Database');
 
-        $dbGroup = ($this->instance == '') ? $pdoIfxConfig->defaultGroup : $this->instance;
+        $dbGroup = ($this->instance == '') ? $dbConfig->defaultGroup : $this->instance;
 
-        $config = $pdoIfxConfig->{$dbGroup} ?? false;
+        $config = $dbConfig->{$dbGroup} ?? false;
 
         if (! $config)
         {
@@ -71,37 +71,14 @@ class Connection {
         }
 
         return [
-            'DSN' => $this->getDsn($config),
+            'DSN' => $config['DSN'],
             'username' => $config['username'],
             'password' => $config['password'],
-            'fetchmode' => $pdoIfxConfig->returnType,
+            'fetchmode' => 'object',
             'charset'   => $config['charset'] ?? '',
             'collation' => $config['collation'] ?? '',
-            'prefix' => $this->getPrefix($config)
+            'DBPrefix' => $this->getPrefix($config)
         ];
-    }
-
-    /**
-     * GetDsn
-     *
-     * @return string
-     */
-    public function getDsn(array $config): string
-    {
-        $extra = isset($config['db_locale']) &&  $config['db_locale'] != ''
-            ? "DB_LOCALE={$config['db_locale']};"
-            : '';
-
-        $extra = isset($config['client_locale']) &&  $config['client_locale'] != ''
-            ? "CLIENT_LOCALE={$config['client_locale']};"
-            : '';
-
-        return "informix:host={$config['host']};"
-                    . "service={$config['service']};"
-                    . "server={$config['server']};"
-                    . "database={$config['database']};"
-                    . "protocol={$config['protocol']};"
-                    . "EnableScrollableCursors={$config['EnableScrollableCursors']};" . $extra;
     }
 
     /**
@@ -111,8 +88,8 @@ class Connection {
      */
     public function getPrefix(array $config): string
     {
-        return isset($config['prefix']) && $config['prefix'] != ''
-            ? substr($config['prefix'],-1) == ':' ? $config['prefix'] : $config['prefix'] . ':'
+        return isset($config['DBPrefix']) && $config['DBPrefix'] != ''
+            ? substr($config['DBPrefix'], -1) == ':' ? $config['DBPrefix'] : $config['DBPrefix'] . ':'
             : '';
     }
 }

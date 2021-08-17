@@ -6,31 +6,28 @@
 CodeIgniter 4 Informix Database Package
 
 ## Description
-CodeIgniter 4 Informix Database Query Builder
+CodeIgniter 4 Informix Database Query Builder Using PDO.
 
-## Requirement
-* [CodeIgniter 4](https://github.com/codeigniter4/CodeIgniter4)
-* [DbToolbar](https://github.com/nfaiz/dbtoolbar)
 
 ## Example Usage
 ```php
 
-$builder = service('ifx', 'db_common'); // Using db_common for DbGroup
+$builder = ifx_connect();
 
 $result = $builder->table('users')
-	->select('id, name')
-	->where('age', '>', 18)
-	->orderBy('id', 'desc')
-	->limit(20)
-	->getResult();
+    ->select('id, name')
+    ->where('age', '>', 18)
+    ->orderBy('id', 'desc')
+    ->limit(2)
+    ->getResult();
 
 d($result);
 ```
 
 ## Screenshot
 
-<img src="https://user-images.githubusercontent.com/1330109/129525581-9bb99cc5-4a34-495e-9274-5138a5346d22.png" alt="Debug">
+<img src="https://user-images.githubusercontent.com/1330109/129663982-da6196c4-92c9-4731-a3e1-005881784efe.png" alt="Debug">
 
 ## Docs
-* [Installation and Configuration](docs/INSTALLATION.md)<br />
+* [Installation](docs/INSTALLATION.md)
 * [Usage](docs/USAGE.md)
