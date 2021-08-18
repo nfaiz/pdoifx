@@ -2,26 +2,26 @@
 
 ## Configure Database Connection
 
-Database configuration is same like CodeIniter 4. See [here](https://www.codeigniter.com/user_guide/database/configuration.html) for more information.
+Database configuration is same like CodeIgniter 4. Database connection group need to be created. See [here](https://www.codeigniter.com/user_guide/database/configuration.html).
 
-Refer [here](https://www.php.net/manual/en/ref.pdo-informix.connection.php#122191) for more information about PDO DNS.
+Using this [example #2](https://www.php.net/manual/en/ref.pdo-informix.connection.php#122191) for Informix DSN connection string;
 
-E.g if using `.env`
+Set environment `.env` like this
 
 ```shell
-database.default.DSN = informix:host=host.domain.com;service=9800;database=default;server=product;protocol=onsoctcp;EnableScrollableCursors=1
-database.default.username = root
-database.default.password =
+database.default.DSN = informix:host=host.domain.com;service=9800;database=common_db;server=ids_server;protocol=onsoctcp;EnableScrollableCursors=1
+database.default.username = testuser
+database.default.password = testpass
 database.default.DBPrefix =
 database.default.charset = utf8
 database.default.DBCollat = utf8_general_ci
 ```
 
-## Create Database Connection
+## Initializing the Database Class
 
-Choose either one from two (2) methods to connect to PDO Informix database. .
+Choose either one from two (2) methods to initilize database based on configuration settings.
 
-E.g using `default` or `default2` for database connection. 
+E.g Using `default` and `default2` for multiple database connections.
 
 ```php
 // method 1
@@ -34,42 +34,99 @@ $builder2 = ifx_connect('default2');
 
 ```
 
-Note: If no database connection is specified **$defaultGroup** value in `app/Config/Database.php` will be used.
+Note: If no database connection group specified, **$defaultGroup** value in `app/Config/Database.php` will be used.
 
 
 ## Methods
 
 Table of Contents
 
- * [select](#select)
- * [select functions (min, max, sum, avg, count)](#select-functions-min-max-sum-avg-count)
- * [table](#table)
- * [getRow AND getResult](#getrow-and-getresult)
- * [join](#join)
- * [where](#where)
- * [grouped](#grouped)
- * [whereIn](#wherein)
- * [between](#between)
- * [like](#like)
- * [groupBy](#groupby)
- * [having](#having)
- * [orderBy](#orderby)
- * [limit - offset](#limit---offset)
- * [pagination](#pagination)
- * [insert](#insert)
- * [update](#update)
- * [delete](#delete)
- * [query](#query)
- * [insertId](#insertid)
- * [numRows](#numrows)
- * [transaction](#transaction)
-   * commit
-   * rollBack
- * [error](#error)
- * [queryCount](#querycount)
- * [getLastQuery](#getlastquery)
+* [Loading the Query Builder and Get Result](#loading-the-query-builder-and-get-result)
+  * [table](#table)
+  * [getRow AND getResult](#getrow-and-getresult)
+* [Selecting Data](#selecting-data)
+  * [select](#select)
+  * [select functions (min, max, sum, avg, count)](#select-functions-min-max-sum-avg-count)
+  * [join](#join)
+* [Looking for Spesific Data](#Looking-for-spesific-data)
+  * [where](#where)
+  * [whereIn](#wherein)
+  * [between](#between)
+* [Looking for Similar Data](#Looking-for-similar-data)
+  * [like](#like)
+* [Query Grouping](#query-grouping)
+  * [grouped](#grouped)
+* [Ordering Results](#ordering-results)
+  * [orderBy](#orderby)
+* [Limiting Results]
+  * [limit - offset](#limit---offset)
+  * [pagination](#pagination)
+* [Grouping Results](#grouping-results)
+  * [groupBy](#groupby)
+  * [having](#having)
+* [Inserting Data](#inserting-data)
+  * [insert](#insert)
+  * [insertId](#insertid)
+* [Updating Data](#updating-data)
+  * [update](#update)
+* [Deleting Data](#deleting-data)
+  * [delete](#delete)
+* [Using Raw Query](#using-raw-query)
+  * [query](#query)
+* [Transaction](#transaction)
+  * [beginTransaction](#transaction)
+  * [commit](#transaction)
+  * [rollBack](#transaction)
+* [Query Helper](#query-helper)
+  * [numRows](#numrows)
+  * [queryCount](#querycount)
+  * [getLastQuery](#getlastquery)
+  * [error](#error)
 
 
+## Loading the Query Builder and Get Result
+
+Builder can be loaded using `table()` method. To get result, use `getRow()` or `getResult()` method.
+
+### table
+```php
+// Usage 1: string parameter
+$builder->table('table');
+// Produces: "SELECT * FROM table" (not final query)
+
+$builder->table('table1, table2');
+// Produces: "SELECT * FROM table1, table2" (not final query)
+
+$builder->table('table1 AS t1, table2 AS t2');
+// Produces: "SELECT * FROM table1 AS t1, table2 AS t2" (not final query)
+```
+```php
+// Usage 2: array parameter
+$builder->table(['table1', 'table2']);
+// Produces: "SELECT * FROM table1, table2" (not final query)
+
+$builder->table(['table1 AS t1', 'table2 AS t2']);
+// Produces: "SELECT * FROM table1 AS t1, table2 AS t2" (not final query)
+```
+
+### getRow AND getResult
+
+```php
+// getRow() and getRowArray(): return 1 record.
+// getResult() and getResultArray: return multiple records.
+
+$builder->table('users')->getResult(); 
+// Produces: "SELECT * FROM users"
+
+$builder->select('username')->table('users')->where('status', 1)->getResult();
+// Produces: "SELECT username FROM users WHERE status = 1"
+
+$builder->select('email')->table('users')->where('id', 17)->getRow(); 
+// Produces: "SELECT FIRST 1 email FROM users WHERE id = 17"
+```
+
+
+## Selecting Data
 
 ### select
 ```php
@@ -100,42 +157,6 @@ $builder->table('users')->count('id', 'total_row')->getRow();
 // Produces: "SELECT COUNT(id) AS total_row FROM users"
 ```
 
-### table
-```php
-// Usage 1: string parameter
-$builder->table('table');
-// Produces: "SELECT * FROM table" (not final query)
-
-$builder->table('table1, table2');
-// Produces: "SELECT * FROM table1, table2" (not final query)
-
-$builder->table('table1 AS t1, table2 AS t2');
-// Produces: "SELECT * FROM table1 AS t1, table2 AS t2" (not final query)
-```
-```php
-// Usage 2: array parameter
-$builder->table(['table1', 'table2']);
-// Produces: "SELECT * FROM table1, table2" (not final query)
-
-$builder->table(['table1 AS t1', 'table2 AS t2']);
-// Produces: "SELECT * FROM table1 AS t1, table2 AS t2" (not final query)
-```
-
-### getRow AND getResult
-```php
-// getRow() and getRowArray(): return 1 record.
-// getResult() and getResultArray: return multiple records.
-
-$builder->table('users')->getResult(); 
-// Produces: "SELECT * FROM users"
-
-$builder->select('username')->table('users')->where('status', 1)->getResult();
-// Produces: "SELECT username FROM users WHERE status = 1"
-
-$builder->select('email')->table('users')->where('id', 17)->getRow(); 
-// Produces: "SELECT FIRST 1 email FROM users WHERE id = 17"
-```
-
 ### join
 ```php
 $builder->table('users as u')->join('address as a', 'u.id = a.uid', 'left')->where('u.status', 1)->getResult();
@@ -149,6 +170,8 @@ Available **join** types are;
 - LEFT OUTER
 - RIGHT OUTER
 
+
+## Looking for Spesific Data
 
 ### where
 ```php
@@ -199,17 +222,6 @@ $builder->table('users')->whereNotNull('email')->getResult();
 // Produces: "SELECT * FROM users WHERE email IS NOT NULL"
 ```
 
-### grouped
-```php
-$builder->table('address')
-    ->grouped(function($q) {
-        $q->where('country', 'MAL')->orWhere('country', 'IDN');
-    })
-    ->where('uid', 1)
-    ->getResult();
-// Produces: "SELECT * FROM address WHERE (country='MAL' OR country = 'IDN') AND uid = '1'"
-```
-
 ### WhereIn
 ```php
 $builder->table('users')->where('active', 1)->WhereIn('id', [1, 2, 3])->getResult();
@@ -258,6 +270,9 @@ $builder->table('users')->where('active', 1)->orBetween('age', 18, 25)->getResul
 // Produces: "SELECT * FROM users WHERE active = 1 OR age BETWEEN '18' AND '25'"
 ```
 
+
+## Looking for Similar Data
+
 ### like
 ```php
 $builder->table('users')->like('name', "%faiz%")->getResult();
@@ -282,35 +297,22 @@ $builder->table('users')->like('name', '%faiz%')->orLike('name', '%ateman%')->ge
 // Produces: "SELECT * FROM users WHERE name LIKE '%faiz%' OR name LIKE '%ateman%'"
 ```
 
-### groupBy
+
+## Query Grouping
+
+### grouped
 ```php
-// Usage 1: One parameter
-$builder->table('users')->where('status', 1)->groupBy('gender')->getResult();
-// Produces: "SELECT * FROM users WHERE status = 1 GROUP BY gender"
+$builder->table('address')
+    ->grouped(function($q) {
+        $q->where('country', 'MAL')->orWhere('country', 'IDN');
+    })
+    ->where('uid', 1)
+    ->getResult();
+// Produces: "SELECT * FROM address WHERE (country='MAL' OR country = 'IDN') AND uid = '1'"
 ```
 
-```php
-// Usage 1: Array parameter
-$builder->table('users')->where('status', 1)->groupBy(['gender', 'religion'])->getResult();
-// Produces: "SELECT * FROM users WHERE status = 1 GROUP BY gender, religion"
-```
 
-
-### having
-```php
-$builder->select('COUNT(gender), country')->table('users')->where('status', 1)->groupBy('gender, country')->having('COUNT(gender)', 100)->getResult();
-// Produces: "SELECT COUNT(gender), country FROM users WHERE status = 1 GROUP BY gender, country HAVING COUNT(gender) > '100'"
-
-// OR
-
-$builder->table('users')->where('active', 1)->groupBy('gender')->having('AVG(age)', '<=', 18)->getResult();
-// Produces: "SELECT * FROM users WHERE active='1' GROUP BY gender HAVING AVG(age) <= '18'"
-
-// OR
-
-$builder->table('users')->where('active', 1)->groupBy('gender')->having('AVG(age) > ? AND MAX(age) < ?', [18, 30])->getResult();
-// Produces: "SELECT * FROM users WHERE active='1' GROUP BY gender HAVING AVG(age) > 18 AND MAX(age) < 30"
-```
+## Odering Results
 
 ### orderBy
 ```php
@@ -336,6 +338,8 @@ $builder->table('users')->where('status', 1)->orderBy(2)->limit(10)->getResult()
 // Produces: "SELECT FIRST 10 * FROM users WHERE status = 1 ORDER BY 2"
 ```
 
+## Limiting Results
+
 ### limit - offset
 ```php
 // Usage 1: One parameter
@@ -360,6 +364,42 @@ $builder->table('users')->pagination(15, 2)->getResult();
 // Produces: "SELECT SKIP 15 FIRST 15 * FROM users"
 ```
 
+
+## Grouping Results
+
+### groupBy
+```php
+// Usage 1: One parameter
+$builder->table('users')->where('status', 1)->groupBy('gender')->getResult();
+// Produces: "SELECT * FROM users WHERE status = 1 GROUP BY gender"
+```
+
+```php
+// Usage 1: Array parameter
+$builder->table('users')->where('status', 1)->groupBy(['gender', 'religion'])->getResult();
+// Produces: "SELECT * FROM users WHERE status = 1 GROUP BY gender, religion"
+```
+
+### having
+```php
+$builder->select('COUNT(gender), country')->table('users')->where('status', 1)->groupBy('gender, country')->having('COUNT(gender)', 100)->getResult();
+// Produces: "SELECT COUNT(gender), country FROM users WHERE status = 1 GROUP BY gender, country HAVING COUNT(gender) > '100'"
+
+// OR
+
+$builder->table('users')->where('active', 1)->groupBy('gender')->having('AVG(age)', '<=', 18)->getResult();
+// Produces: "SELECT * FROM users WHERE active='1' GROUP BY gender HAVING AVG(age) <= '18'"
+
+// OR
+
+$builder->table('users')->where('active', 1)->groupBy('gender')->having('AVG(age) > ? AND MAX(age) < ?', [18, 30])->getResult();
+// Produces: "SELECT * FROM users WHERE active='1' GROUP BY gender HAVING AVG(age) > 18 AND MAX(age) < 30"
+```
+
+
+
+## Inserting Data
+
 ### insert
 ```php
 $data = [
@@ -372,6 +412,22 @@ $data = [
 $builder->table('users')->insert($data);
 // Produces: "INSERT INTO users (name, gender, dob, status) VALUES ('faiz', 'M', '18/08/2021', '1')"
 ```
+
+### insertId
+```php
+$data = [
+    'username' => 'Faiz',
+    'password' => 'pass',
+    'time' => strtotime('now'),
+    'status' => 1
+];
+$builder->table('account')->insert($data);
+
+d($builder->insertId());
+```
+
+
+## Updating Data
 
 ### update
 ```php
@@ -386,6 +442,9 @@ $builder->table('account')->where('id', 10)->update($data);
 // Produces: "UPDATE account SET username = 'Faiz', password = 'pass', activation = 1, status = 1 WHERE id = 10"
 ```
 
+
+## Deleting Data
+
 ### delete
 ```php
 $builder->table('users')->where('id', 17)->delete();
@@ -397,7 +456,29 @@ $builder->table('users')->delete();
 // Produces: "TRUNCATE TABLE users"
 ```
 
-### transaction
+
+## Using Raw Query
+
+### query
+```php
+// Usage 1: Select all records, returns object
+$builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetchAll();
+
+// Usage 1: Select all records, returns array
+$builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetchAllArray();
+
+// Usage 2: Select one record, returns object
+$builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetch();
+
+// Usage 2: Select one record, returns array
+$builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetchArray();
+
+// Usage 3: Other queries like Update, Insert, Delete etc...
+$builder->query('DELETE FROM users WHERE id = ?', [10])->exec();
+```
+
+
+### Transaction
 ```php
 try
 {
@@ -423,36 +504,7 @@ catch (\PDOException $e)
 }
 ```
 
-### query
-```php
-// Usage 1: Select all records, returns object
-$builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetchAll();
-
-// Usage 1: Select all records, returns array
-$builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetchAllArray();
-
-// Usage 2: Select one record, returns object
-$builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetch();
-
-// Usage 2: Select one record, returns array
-$builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetchArray();
-
-// Usage 3: Other queries like Update, Insert, Delete etc...
-$builder->query('DELETE FROM users WHERE id = ?', [10])->exec();
-```
-
-### insertId
-```php
-$data = [
-    'username' => 'Faiz',
-    'password' => 'pass',
-    'time' => strtotime('now'),
-    'status' => 1
-];
-$builder->table('account')->insert($data);
-
-d($builder->insertId());
-```
+## Query Helper
 
 ### numRows
 ```php

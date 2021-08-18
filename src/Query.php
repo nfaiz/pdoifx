@@ -287,8 +287,8 @@ class Query
 
                 $cond .= $joints[$i];
 
-                $cond .= preg_match("/(\(*)?([\[\]\w\.'-]+)" . preg_quote($operator) . '(.*)/i', $condition, $match) 
-                    ? $match[1] . $match[2] . $operator . $match[3] 
+                $cond .= preg_match("/(\(*)?([\[\]\w\.'-]+)" . preg_quote($operator) . '(.*)/i', $condition, $match)
+                    ? $match[1] . $match[2] . $operator . $match[3]
                     : $condition;
             }
         }

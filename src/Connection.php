@@ -34,11 +34,9 @@ class Connection {
 
             $this->connectDuration = microtime(true) - $this->connectTime;
 
-            $pdo->exec("SET NAMES '" . $config['charset'] . "' COLLATE '" . $config['collation'] . "'");
+            $pdo->exec("SET NAMES '" . $config['charset'] . "' COLLATE '" . $config['DBCollat'] . "'");
 
             $pdo->exec("SET CHARACTER SET '" . $config['charset'] . "'");
-
-            $pdo->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, ($config['fetchmode'] != 'array') ? \PDO::FETCH_OBJ : \PDO::FETCH_ASSOC);
 
             $pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
         }
@@ -65,18 +63,17 @@ class Connection {
 
         $config = $dbConfig->{$dbGroup} ?? false;
 
-        if (! $config)
+        if ($config === false)
         {
-            throw new \Exception("DBGroup Not found. Check PdoIfx Config.", 1);
+            throw new \Exception("Database Connection Group Not found. Check Database Config.", 1);
         }
 
         return [
             'DSN' => $config['DSN'],
             'username' => $config['username'],
             'password' => $config['password'],
-            'fetchmode' => 'object',
             'charset'   => $config['charset'] ?? '',
-            'collation' => $config['collation'] ?? '',
+            'DBCollat' => $config['DBCollat'] ?? '',
             'DBPrefix' => $this->getPrefix($config)
         ];
     }

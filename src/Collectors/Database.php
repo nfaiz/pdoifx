@@ -116,6 +116,11 @@ class Database extends BaseCollector
         return $data;
     }
 
+    /**
+     * Returns the data of this collector to be formatted in the toolbar
+     *
+     * @return mixed
+     */
     public function display(): string
     {
         $toolbar = new Toolbar(static::$queries);
