@@ -1,5 +1,21 @@
 # Changelog
 
+
+## [v0.9.2](https://github.com/nfaiz/ci4-ifx/compare/v0.9.1...v0.9.2) - Not Released
+
+### Enhancement
+
+- Add placeholder name for bindings.
+- Improved documentations.
+- Add case insensitive parameter for `like()` method.
+- Add `whereRaw()` and `orWhereRaw()` methods for non escaping where value.
+- Add `selectMax()`, `selectMin()`, `selectSum()`, `selectCount()` and `selectAvg()` alias methods.
+
+### Changed
+
+- `numRows()` method to `affectedRows()`.
+
+
 ## [v0.9.1](https://github.com/nfaiz/ci4-ifx/compare/v0.9.0...v0.9.1) - 2021-08-17
 
 ### Enhancement
@@ -16,4 +32,3 @@
 ### Added
 
 - Initial pre-release.
-

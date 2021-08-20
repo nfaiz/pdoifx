@@ -6,7 +6,7 @@ Database configuration is same like CodeIgniter 4. Database connection group nee
 
 Using this [example #2](https://www.php.net/manual/en/ref.pdo-informix.connection.php#122191) for Informix DSN connection string;
 
-Set environment `.env` like this
+E.g for `.env`
 
 ```shell
 database.default.DSN = informix:host=host.domain.com;service=9800;database=common_db;server=ids_server;protocol=onsoctcp;EnableScrollableCursors=1
@@ -41,12 +41,12 @@ Note: If no database connection group specified, **$defaultGroup** value in `app
 
 Table of Contents
 
-* [Loading the Query Builder and Get Result](#loading-the-query-builder-and-get-result)
+* [Basic usage](#basic-usage)
   * [table](#table)
-  * [getRow AND getResult](#getrow-and-getresult)
+  * [result](#result)
 * [Selecting Data](#selecting-data)
   * [select](#select)
-  * [select functions (min, max, sum, avg, count)](#select-functions-min-max-sum-avg-count)
+  * [select function](#select-function)
   * [join](#join)
 * [Looking for Spesific Data](#Looking-for-spesific-data)
   * [where](#where)
@@ -71,8 +71,9 @@ Table of Contents
   * [update](#update)
 * [Deleting Data](#deleting-data)
   * [delete](#delete)
-* [Using Raw Query](#using-raw-query)
-  * [query](#query)
+* [Raw Query](#raw-query)
+  * [Bind Marker](#bind-marker)
+  * [Placeholder](#placeholder)
 * [Transaction](#transaction)
   * [beginTransaction](#transaction)
   * [commit](#transaction)
@@ -84,11 +85,11 @@ Table of Contents
   * [error](#error)
 
 
-## Loading the Query Builder and Get Result
+## Basic usage
 
-Builder can be loaded using `table()` method. To get result, use `getRow()` or `getResult()` method.
+Builder can be loaded using `table(string|array $table)` method. 
 
-### table
+### Table
 ```php
 // Usage 1: string parameter
 $builder->table('table');
@@ -109,7 +110,9 @@ $builder->table(['table1 AS t1', 'table2 AS t2']);
 // Produces: "SELECT * FROM table1 AS t1, table2 AS t2" (not final query)
 ```
 
-### getRow AND getResult
+### Result
+
+To get result, use `getRow()` or `getResult()` method.
 
 ```php
 // getRow() and getRowArray(): return 1 record.
@@ -125,10 +128,19 @@ $builder->select('email')->table('users')->where('id', 17)->getRow();
 // Produces: "SELECT FIRST 1 email FROM users WHERE id = 17"
 ```
 
+Available **get result**  methods are;
+- `getResult()` Returns multiple rows (object)
+- `getRow()` Returns one record (object)
+- `getResultArray()` Returns multiple rows (array)
+- `getRowArray()` Returns one record (array)
+
 
 ## Selecting Data
 
 ### select
+
+`select(string|array $select = '*')`
+
 ```php
 // Usage 1: string parameter
 $builder->select('name, email')->table('users')->getResult();
@@ -137,27 +149,29 @@ $builder->select('name, email')->table('users')->getResult();
 $builder->select('name AS n, email AS e')->table('users')->getResult();
 // Produces: "SELECT name AS n, email AS e FROM users"
 ```
-```php
-// Usage2: array parameter
-$builder->select(['name', 'email'])->table('users')->getResult();
-// Produces: "SELECT name, email FROM users"
 
-$builder->select(['name AS n', 'email AS e'])->table('users')->getResult();
-// Produces: "SELECT name AS n, email AS e FROM users"
-```
 
-### select functions (min, max, sum, avg, count)
+### select function
 ```php
 // Usage 1:
-$builder->table('users')->max('age')->getRow();
+$builder->table('users')->selectMax('age')->getResult();
 // Produces: "SELECT MAX(age) FROM users"
 
 // Usage 2:
-$builder->table('users')->count('id', 'total_row')->getRow();
+$builder->table('users')->selectCount('id', 'total_row')->getResult();
 // Produces: "SELECT COUNT(id) AS total_row FROM users"
 ```
+Available **select function**  methods are;
+- `selectMin(string $select[, string $alias = ''])`
+- `selectSum(string $select[, string $alias = ''])`
+- `selectAvg(string $select[, string $alias = ''])`
+- `selectCount(string $select[, string $alias = ''])`
+
 
 ### join
+
+`join($table, $cond, $type)`
+
 ```php
 $builder->table('users as u')->join('address as a', 'u.id = a.uid', 'left')->where('u.status', 1)->getResult();
 // Produces: "SELECT * FROM users as u LEFT JOIN address as a ON u.id = a.t_id WHERE u.status = 1"
@@ -201,12 +215,16 @@ $builder->table('users')->where('age = ? OR age = ?', [18, 20])->getResult();
 
 Available **where** methods are;
 
-- where
-- orWhere
-- notWhere
-- orNotWhere
-- whereNull
-- whereNotNull
+- `where(string $key, string $value)`
+- `orWhere(string $key, string $value)
+- `notWhere(string $key, string $value)`
+- `orNotWhere(string $key, string $value)`
+- `whereNull(string $key)`
+- `whereNotNull(string $key)`
+- `orWhereNull(string $key)`
+- `orWhereNotNull(string $key)`
+- `whereRaw(string $key)` e.g $key = `field = FIELD+1` or `date = current`
+- `orWhereRaw(string $key)` e.g $key = `field = FIELD+1` or `date = current`
 
 Example:
 ```php
@@ -229,11 +247,11 @@ $builder->table('users')->where('active', 1)->WhereIn('id', [1, 2, 3])->getResul
 ```
 
 Available **whereIn** methods are;
-
-- whereIn
-- whereNotIn
-- orWhereIn
-- orWhereNotIn
+string 
+- `whereIn(string $key, array $value)`
+- `whereNotIn(string $key, array $value)`
+- `orWhereIn([string $key, array $value)`
+- `orWhereNotIn(string $key, array $value)`
 
 Example:
 ```php
@@ -254,10 +272,10 @@ $builder->table('users')->where('active', 1)->between('age', 18, 25)->getResult(
 
 Available **between** methods are;
 
-- between
-- orBetween
-- notBetween
-- orNotBetween
+- `between(string $key, string $value, string $value2)`
+- `orBetween(string $key, string $value, string $value2)`
+- `notBetween(string $key, string $value, string $value2)`
+- `orNotBetween(string $key, string $value, string $value2)`
 
 Example:
 ```php
@@ -275,16 +293,16 @@ $builder->table('users')->where('active', 1)->orBetween('age', 18, 25)->getResul
 
 ### like
 ```php
-$builder->table('users')->like('name', "%faiz%")->getResult();
+$builder->table('users')->like('name', '%faiz%')->getResult();
 // Produces: "SELECT * FROM users WHERE name LIKE '%faiz%'"
 ```
 
 Available like methods are;
 
-- like
-- orLike
-- notLike
-- orNotLike
+- `like(string $key, string $value[, bool $caseInsensitive])`
+- `orLike(string $key, string $value[, bool $caseInsensitive])`
+- `notLike(string $key, string $value[, bool $caseInsensitive])`
+- `orNotLike(string $key, string $value[, bool $caseInsensitive])`
 
 Example:
 ```php
@@ -315,6 +333,9 @@ $builder->table('address')
 ## Odering Results
 
 ### orderBy
+
+`orderBy(string $key[, string $order])`
+
 ```php
 // Usage 1: One parameter
 $builder->table('users')->where('status', 1)->orderBy('id')->getResult();
@@ -340,6 +361,9 @@ $builder->table('users')->where('status', 1)->orderBy(2)->limit(10)->getResult()
 
 ## Limiting Results
 
+- `limit(int $value)`
+- `offset(int $value)`
+
 ### limit - offset
 ```php
 // Usage 1: One parameter
@@ -353,6 +377,9 @@ $builder->table('users')->limit(10)->offset(10)->getResult();
 ```
 
 ### pagination
+
+`pagination(int $value, int $value)`
+
 ```php
 // First parameter: Data count of per page
 // Second parameter: Active page
@@ -368,6 +395,9 @@ $builder->table('users')->pagination(15, 2)->getResult();
 ## Grouping Results
 
 ### groupBy
+
+`groupBy(string $value)`
+
 ```php
 // Usage 1: One parameter
 $builder->table('users')->where('status', 1)->groupBy('gender')->getResult();
@@ -381,6 +411,9 @@ $builder->table('users')->where('status', 1)->groupBy(['gender', 'religion'])->g
 ```
 
 ### having
+
+`having(string $key,[, string $cond|$value[, string $value]])`
+
 ```php
 $builder->select('COUNT(gender), country')->table('users')->where('status', 1)->groupBy('gender, country')->having('COUNT(gender)', 100)->getResult();
 // Produces: "SELECT COUNT(gender), country FROM users WHERE status = 1 GROUP BY gender, country HAVING COUNT(gender) > '100'"
@@ -399,6 +432,8 @@ $builder->table('users')->where('active', 1)->groupBy('gender')->having('AVG(age
 
 
 ## Inserting Data
+
+`insert(array $value)`
 
 ### insert
 ```php
@@ -429,6 +464,8 @@ d($builder->insertId());
 
 ## Updating Data
 
+`update(array $value)`
+
 ### update
 ```php
 $data = [
@@ -445,6 +482,8 @@ $builder->table('account')->where('id', 10)->update($data);
 
 ## Deleting Data
 
+`update([string $field, string $value])`
+
 ### delete
 ```php
 $builder->table('users')->where('id', 17)->delete();
@@ -457,9 +496,9 @@ $builder->table('users')->delete();
 ```
 
 
-## Using Raw Query
+## Raw Query
 
-### query
+### Bind Marker
 ```php
 // Usage 1: Select all records, returns object
 $builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fetchAll();
@@ -477,8 +516,26 @@ $builder->query('SELECT * FROM users WHERE id = ? AND status = ?', [10, 1])->fet
 $builder->query('DELETE FROM users WHERE id = ?', [10])->exec();
 ```
 
+### Placeholder
+```php
+// Usage 1: Select all records, returns object
+$builder->query('SELECT * FROM users WHERE id = :id AND status = :status', ['id' => 10, 'status'=> 1])->fetchAll();
 
-### Transaction
+// Usage 1: Select all records, returns array
+$builder->query('SELECT * FROM users WHERE id = :id AND status = :status', ['id' => 10, 'status'=> 1])->fetchAllArray();
+
+// Usage 2: Select one record, returns object
+$builder->query('SELECT * FROM users WHERE id = :id AND status = :status', ['id' => 10, 'status'=> 1])->fetch();
+
+// Usage 2: Select one record, returns array
+$builder->query('SELECT * FROM users WHERE id = :id AND status = :status', ['id' => 10, 'status'=> 1])->fetchArray();
+
+// Usage 3: Other queries like Update, Insert, Delete etc...
+$builder->query('DELETE FROM users WHERE id = :id', [10])->exec();
+```
+
+
+## Transaction
 ```php
 try
 {
@@ -506,11 +563,11 @@ catch (\PDOException $e)
 
 ## Query Helper
 
-### numRows
+### affectedRows
 ```php
 $builder->select('name, gender')->table('users')->where('status', 1)->orWhere('status', 2)->getResult();
 
-d($builder->numRows());
+d($builder->affectedRows());
 ```
 
 ### error

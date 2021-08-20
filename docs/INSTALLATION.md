@@ -51,7 +51,7 @@ public $ifxCollector = true;
 public $ifxTitle = 'Informix';
 ```
 
-and for query styling add properties below. (Optional)
+For query styling add properties below. (Optional)
 
 ```php
 /**
@@ -95,4 +95,7 @@ public $logger = false;
 Refer [here](https://github.com/nfaiz/dbtoolbar#configuration) for query styling configurations.
 
 
-Usage documentation can be found [here](USAGE.md#usage)
+## Docs
+* [Readme](../README.md)
+* [Usage](USAGE.md)
+

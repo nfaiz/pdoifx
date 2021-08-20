@@ -66,6 +66,8 @@ class Query
 
     protected $instance;
 
+    protected $bindMarker = '?';
+
     public function __construct(string $instance = '')
     {
         $informix = new Connection($instance);
@@ -153,6 +155,16 @@ class Query
     }
 
     /**
+     * Alias Max
+     *
+     * @return $this
+     */
+    public function selectMax(string $field, $name = null)
+    {
+        return $this->max($field, $name);
+    }
+
+    /**
      * @param string      $field
      * @param string|null $name
      *
@@ -165,6 +177,16 @@ class Query
         $this->optimizeSelect($column);
 
         return $this;
+    }
+
+    /**
+     * Alias Min
+     *
+     * @return $this
+     */
+    public function selectMin(string $field, $name = null)
+    {
+        return $this->min($field, $name);
     }
 
     /**
@@ -183,6 +205,16 @@ class Query
     }
 
     /**
+     * Alias Sum
+     *
+     * @return $this
+     */
+    public function selectSum(string $field, $name = null)
+    {
+        return $this->sum($field, $name);
+    }
+
+    /**
      * @param string      $field
      * @param string|null $name
      *
@@ -198,6 +230,16 @@ class Query
     }
 
     /**
+     * Alias Count
+     *
+     * @return $this
+     */
+    public function selectCount(string $field, $name = null)
+    {
+        return $this->count($field, $name);
+    }
+
+    /**
      * @param string      $field
      * @param string|null $name
      *
@@ -210,6 +252,16 @@ class Query
         $this->optimizeSelect($column);
 
         return $this;
+    }
+
+    /**
+     * Alias Avg
+     *
+     * @return $this
+     */
+    public function selectAvg(string $field, $name = null)
+    {
+        return $this->avg($field, $name);
     }
 
     /**
@@ -343,8 +395,8 @@ class Query
             ];
         }
 
-        return preg_match_all('/' . implode('|', $_operators) . '/i', $str, $match) 
-            ? ($list ? $match[0] : $match[0][0]) 
+        return preg_match_all('/' . implode('|', $_operators) . '/i', $str, $match)
+            ? ($list ? $match[0] : $match[0][0])
             : false;
     }
 
@@ -359,7 +411,7 @@ class Query
      */
     public function where($where, $operator = null, $val = null, $type = '', $andOr = 'AND')
     {
-        if (is_array($where) && !empty($where))
+        if (is_array($where) && ! empty($where))
         {
             $_where = [];
 
@@ -379,20 +431,21 @@ class Query
 
             if (is_array($operator))
             {
-                $params = explode('?', $where);
+                $params = explode($this->bindmarker, $where);
 
                 $_where = '';
 
                 foreach ($params as $key => $value)
                 {
-                    if (!empty($value))
+                    if (! empty($value))
                     {
                         $_where .= $type . $value . (isset($operator[$key]) ? $this->escape($operator[$key]) : '');
                     }
                 }
+
                 $where = $_where;
             }
-            elseif (!in_array($operator, $this->operators) || $operator == false)
+            elseif (! in_array($operator, $this->operators) || $operator == false)
             {
                 $where = $type . $where . ' = ' . $this->escape($operator);
             }
@@ -409,11 +462,21 @@ class Query
             $this->grouped = false;
         }
 
-        $this->where = is_null($this->where)
-            ? $where
-            : $this->where . ' ' . $andOr . ' ' . $where;
+        $this->optimizeWhere($where, $andOr);
 
         return $this;
+    }
+
+    public function whereRaw($where, $andOr = 'AND')
+    {
+        $this->optimizeWhere($where, $andOr);
+
+        return $this;
+    }
+
+    public function orWhereRaw($where)
+    {
+        return $this->whereRaw($where, 'OR');
     }
 
     /**
@@ -435,7 +498,7 @@ class Query
      *
      * @return $this
      */
-    public function notWhere($where, $operator = null, $val = null)
+    public function WhereNot($where, $operator = null, $val = null)
     {
         return $this->where($where, $operator, $val, 'NOT ', 'AND');
     }
@@ -447,7 +510,7 @@ class Query
      *
      * @return $this
      */
-    public function orNotWhere($where, $operator = null, $val = null)
+    public function orWhereNot($where, $operator = null, $val = null)
     {
         return $this->where($where, $operator, $val, 'NOT ', 'OR');
     }
@@ -458,11 +521,11 @@ class Query
      *
      * @return $this
      */
-    public function whereNull(string $where, bool $not = false)
+    public function whereNull(string $where, bool $not = false, string $andOr = 'AND')
     {
         $where = $where . ' IS ' . ($not ? 'NOT' : '') . ' NULL';
 
-        $this->where = is_null($this->where) ? $where : $this->where . ' ' . 'AND ' . $where;
+        $this->optimizeWhere($where, $andOr);
 
         return $this;
     }
@@ -476,6 +539,28 @@ class Query
     {
         return $this->whereNull($where, true);
     }
+
+    /**
+     * @param string $where
+     * @param bool   $not
+     *
+     * @return $this
+     */
+    public function orWhereNull(string $where, bool $not = false)
+    {
+        return $this->whereNull($where, false, 'OR');
+    }
+
+    /**
+     * @param string $where
+     *
+     * @return $this
+     */
+    public function orWhereNotNull(string $where)
+    {
+        return $this->whereNull($where, true, 'OR');
+    }
+
 
     /**
      * @param Closure $obj
@@ -501,7 +586,7 @@ class Query
      *
      * @return $this
      */
-    public function whereIn(string $field, array $keys, string $type = '', string $andOr = 'AND')
+    public function whereIn(string $field, array $keys, string $andOr = 'AND', string $type = '')
     {
         if (is_array($keys))
         {
@@ -517,12 +602,12 @@ class Query
             if ($this->grouped)
             {
                 $where = '(' . $where;
+
                 $this->grouped = false;
             }
 
-            $this->where = is_null($this->where)
-                ? $where
-                : $this->where . ' ' . $andOr . ' ' . $where;
+            $this->optimizeWhere($where, $andOr);
+
         }
 
         return $this;
@@ -536,7 +621,7 @@ class Query
      */
     public function whereNotIn(string $field, array $keys)
     {
-        return $this->in($field, $keys, 'NOT ', 'AND');
+        return $this->whereIn($field, $keys, 'AND', 'NOT ');
     }
 
     /**
@@ -547,7 +632,7 @@ class Query
      */
     public function orWhereIn(string $field, array $keys)
     {
-        return $this->in($field, $keys, '', 'OR');
+        return $this->whereIn($field, $keys, 'OR', '');
     }
 
     /**
@@ -558,7 +643,7 @@ class Query
      */
     public function orWhereNotIn(string $field, array $keys)
     {
-        return $this->in($field, $keys, 'NOT ', 'OR');
+        return $this->whereIn($field, $keys, 'OR', 'NOT ');
     }
 
     /**
@@ -577,12 +662,11 @@ class Query
         if ($this->grouped)
         {
             $where = '(' . $where;
+
             $this->grouped = false;
         }
 
-        $this->where = is_null($this->where)
-            ? $where
-            : $this->where . ' ' . $andOr . ' ' . $where;
+        $this->optimizeWhere($where, $andOr);
 
         return $this;
     }
@@ -631,21 +715,27 @@ class Query
      *
      * @return $this
      */
-    public function like(string $field, string $data, string $type = '', string $andOr = 'AND')
+    public function like(string $field, string $data, bool $caseInsensitive = false, $andOr = 'AND', $type = '')
     {
         $like = $this->escape($data);
 
-        $where = $field . ' ' . $type . 'LIKE ' . $like;
+        if ($caseInsensitive == true)
+        {
+            $where = 'lower('. $field .') ' . $type . 'LIKE ' . strtolower($like);
+        }
+        else
+        {
+            $where =  $field . ' ' . $type . 'LIKE ' . $like;
+        }
 
         if ($this->grouped)
         {
             $where = '(' . $where;
+
             $this->grouped = false;
         }
 
-        $this->where = is_null($this->where)
-            ? $where
-            : $this->where . ' ' . $andOr . ' ' . $where;
+        $this->optimizeWhere($where, $andOr);
 
         return $this;
     }
@@ -653,25 +743,25 @@ class Query
     /**
      * @return $this
      */
-    public function orLike(string $field, string $data)
+    public function orLike(string $field, string $data, bool $caseInsensitive = false)
     {
-        return $this->like($field, $data, '', 'OR');
+        return $this->like($field, $data, $caseInsensitive, 'OR', '');
     }
 
     /**
      * @return $this
      */
-    public function notLike(string $field, string $data)
+    public function notLike(string $field, string $data, bool $caseInsensitive = false)
     {
-        return $this->like($field, $data, 'NOT ', 'AND');
+        return $this->like($field, $data, $caseInsensitive, 'AND', 'NOT ');
     }
 
     /**
      * @return $this
      */
-    public function orNotLike(string $field, string $data)
+    public function orNotLike(string $field, string $data, bool $caseInsensitive = false)
     {
-        return $this->like($field, $data, 'NOT ', 'OR');
+        return $this->like($field, $data, $caseInsensitive, 'OR', 'NOT ');
     }
 
     /**
@@ -778,13 +868,13 @@ class Query
     {
         if (is_array($operator))
         {
-            $fields = explode('?', $field);
+            $fields = explode($this->bindmarker, $field);
 
             $where = '';
 
             foreach ($fields as $key => $value)
             {
-                if (!empty($value))
+                if (! empty($value))
                 {
                     $where .= $value . (isset($operator[$key]) ? $this->escape($operator[$key]) : '');
                 }
@@ -792,7 +882,7 @@ class Query
 
             $this->having = $where;
         }
-        elseif (!in_array($operator, $this->operators))
+        elseif (! in_array($operator, $this->operators))
         {
             $this->having = $field . ' > ' . $this->escape($operator);
         }
@@ -809,7 +899,7 @@ class Query
      *
      * @return int
      */
-    public function numRows(): int
+    public function affectedRows(): int
     {
         return $this->numRows;
     }
@@ -1136,7 +1226,7 @@ class Query
      *
      * @return mixed
      */
-    public function fetch(string $type = null, $argument = null, $all = false)
+    public function fetch($type = null, $argument = null, $all = false)
     {
         if (is_null($this->query))
         {
@@ -1147,7 +1237,7 @@ class Query
 
         $query = $this->pdo->query($this->query);
 
-        if (!$query)
+        if (! $query)
         {
             $this->error = $this->pdo->errorInfo()[2];
 
@@ -1169,6 +1259,8 @@ class Query
 
         $end = microtime(true);
 
+        $result = ($this->result === false) ? [] : $result;
+
         $this->numRows = is_array($result) ? count($result) : 1;
 
         $this->triggerEvent($this->query, $start, $end, $this->numRows);
@@ -1181,7 +1273,7 @@ class Query
      *
      * @return mixed
      */
-    public function fetchArray(string $type = 'array', $argument = null, $all = false)
+    public function fetchArray($type = 'array', $argument = null, $all = false)
     {
         return $this->fetch($type, $argument, $all);
     }
@@ -1191,7 +1283,7 @@ class Query
      *
      * @return mixed
      */
-    public function fetchAll(string $type = null, string $argument = null)
+    public function fetchAll($type = null, $argument = null)
     {
         return $this->fetch($type, $argument, true);
     }
@@ -1201,7 +1293,7 @@ class Query
      *
      * @return mixed
      */
-    public function fetchAllArray(string $type = 'array', string $argument = null)
+    public function fetchAllArray($type = 'array', $argument = null)
     {
         return $this->fetchAll($type, $argument, true);
     }
@@ -1217,17 +1309,11 @@ class Query
 
         if (is_array($all) || func_num_args() === 1)
         {
-            $params = explode('?', $query);
+            $this->finalQueryString = $query;
 
-            $newQuery = '';
+            $this->binds = $all;
 
-            foreach ($params as $key => $value)
-            {
-                if (!empty($value))
-                {
-                    $newQuery .= $value . (isset($all[$key]) ? $this->escape($all[$key]) : '');
-                }
-            }
+            $newQuery = $this->compileBinds();
 
             $this->query = $newQuery;
 
@@ -1272,6 +1358,7 @@ class Query
 
                 $this->result = $all ? $sql->fetchAll() : $sql->fetch();
 
+                $this->result = ($this->result === false) ? [] : $this->result;
             }
             else
             {
@@ -1279,6 +1366,8 @@ class Query
 
                 $this->error();
             }
+
+
         }
         else
         {
@@ -1294,13 +1383,13 @@ class Query
             }
         }
 
-        $this->numRows = is_array($this->result) ? count($this->result) : ($this->result === '' ? 0 : 1);
+        $this->numRows = is_array($this->result) ? count($this->result) : (empty($this->result) ? 0 : 1);
 
         if ($type == PDO::FETCH_ASSOC)
         {
-            $this->numRows = count($this->result) != count($this->result, COUNT_RECURSIVE)
+            $this->numRows = is_array($this->result) && count($this->result) != count($this->result, COUNT_RECURSIVE)
                 ? count($this->result)
-                : ($this->result === '' ? 0 : 1);
+                : (empty($this->result) ? 0 : 1);
         }
 
         $this->triggerEvent($this->query, $start, $end, $this->numRows);
@@ -1308,18 +1397,6 @@ class Query
         $this->queryCount++;
 
         return $this->result;
-    }
-
-    /**
-     * @param $data
-     *
-     * @return string
-     */
-    public function escape($data)
-    {
-        return $data === null ? 'NULL' : (
-            is_int($data) || is_float($data) ? $data : $this->pdo->quote($data)
-        );
     }
 
     /**
@@ -1359,7 +1436,7 @@ class Query
     /**
      * @return void
      */
-    protected function reset()
+    private function reset()
     {
         $this->select = '*';
         $this->from = null;
@@ -1384,7 +1461,7 @@ class Query
      *
      * @return int
      */
-    protected function getFetchType($type)
+    private function getFetchType($type)
     {
         return $type === 'class'
             ? PDO::FETCH_CLASS
@@ -1407,6 +1484,18 @@ class Query
             : $this->select . ', ' . $fields;
     }
 
+    /**
+     * Optimize Where for the query
+     *
+     * @return void
+     */
+    private function optimizeWhere($where, $andOr = 'AND')
+    {
+        $this->where = is_null($this->where)
+            ? $where
+            : $this->where . ' ' . $andOr . ' ' . $where;
+    }
+
     private function triggerEvent(string $sql, $start, $end, $numRows = 0)
     {
         $duration = number_format(($end - $start), 6);
@@ -1423,5 +1512,181 @@ class Query
         ];
 
         Events::trigger('PdoIfx', $query);
+    }
+
+    private function compileBinds()
+    {
+        $sql = $this->finalQueryString;
+
+        $hasNamedBinds = preg_match('/:((?!=).+)/', $sql) === 1;
+
+        if (empty($this->binds)
+            || empty($this->bindMarker)
+            || (! $hasNamedBinds && strpos($sql, $this->bindMarker) === false)
+        )
+        {
+            return;
+        }
+
+        if (! is_array($this->binds))
+        {
+            $binds     = [$this->binds];
+            $bindCount = 1;
+        }
+        else
+        {
+            $binds     = $this->binds;
+            $bindCount = count($binds);
+        }
+
+        // Reverse the binds so that duplicate named binds
+        // will be processed prior to the original binds.
+        if (! is_numeric(key(array_slice($binds, 0, 1))))
+        {
+            $binds = array_reverse($binds);
+        }
+
+        $ml = strlen($this->bindMarker);
+
+        $sql = $hasNamedBinds ? $this->matchNamedBinds($sql, $binds) : $this->matchSimpleBinds($sql, $binds, $bindCount, $ml);
+
+        return $sql;
+    }
+
+    /**
+     * Match bindings
+     *
+     * @param  string $sql
+     * @param  array  $binds
+     * @return string
+     */
+    private function matchNamedBinds(string $sql, array $binds): string
+    {
+        $replacers = [];
+
+        foreach ($binds as $placeholder => $value)
+        {
+            $escapedValue = $this->escape($value);
+
+            if (is_array($value))
+            {
+                $escapedValue = '(' . implode(', ', $escapedValue) . ')';
+            }
+
+            $replacers[":{$placeholder}"] = $escapedValue;
+        }
+
+        return strtr($sql, $replacers);
+    }
+
+    /**
+     * Match bindings
+     *
+     * @param  string  $sql
+     * @param  array   $binds
+     * @param  integer $bindCount
+     * @param  integer $ml
+     * @return string
+     */
+    private function matchSimpleBinds(string $sql, array $binds, int $bindCount, int $ml): string
+    {
+        // Make sure not to replace a chunk inside a string that happens to match the bind marker
+        if ($c = preg_match_all("/'[^']*'/", $sql, $matches))
+        {
+            $c = preg_match_all('/' . preg_quote($this->bindMarker, '/') . '/i', str_replace($matches[0], str_replace($this->bindMarker, str_repeat(' ', $ml), $matches[0]), $sql, $c), $matches, PREG_OFFSET_CAPTURE);
+
+            // Bind values' count must match the count of markers in the query
+            if ($bindCount !== $c)
+            {
+                return $sql;
+            }
+        }
+        // Number of binds must match bindMarkers in the string.
+        elseif (($c = preg_match_all('/' . preg_quote($this->bindMarker, '/') . '/i', $sql, $matches, PREG_OFFSET_CAPTURE)) !== $bindCount)
+        {
+            return $sql;
+        }
+
+        do
+        {
+            $c--;
+            $escapedValue = $this->escape($binds[$c]);
+            if (is_array($escapedValue))
+            {
+                $escapedValue = '(' . implode(', ', $escapedValue) . ')';
+            }
+            $sql = substr_replace($sql, $escapedValue, $matches[0][$c][1], $ml);
+        }
+        while ($c !== 0);
+
+        return $sql;
+    }
+
+    /**
+     * Escapes data based on type.
+     * Sets boolean and null types
+     *
+     * @param mixed $str
+     *
+     * @return mixed
+     */
+    private function escape($str)
+    {
+        if (is_array($str))
+        {
+            return array_map([&$this, 'escape'], $str);
+        }
+
+        if (is_string($str))
+        {
+            return "'" . $this->escapeString($str) . "'";
+        }
+
+        if (is_bool($str))
+        {
+            return ($str === false) ? 0 : 1;
+        }
+
+        if (is_numeric($str) && $str < 0)
+        {
+            return "{$str}";
+        }
+
+        if ($str === null)
+        {
+            return 'NULL';
+        }
+
+        return $str;
+    }
+
+    /**
+     * Escape String
+     *
+     * @param  string|string[] $str  Input string
+     * @param  boolean         $like Whether or not the string will be used in a LIKE condition
+     * @return string|string[]
+     */
+    private function escapeString($str)
+    {
+        if (is_array($str))
+        {
+            foreach ($str as $key => $val)
+            {
+                $str[$key] = $this->escapeString($val, $like);
+            }
+
+            return $str;
+        }
+
+        $str = $this->_escapeString($str);
+
+        return $str;
+    }
+
+    // Platform independent string escape.
+    private function _escapeString(string $str): string
+    {
+        return str_replace("'", "''", remove_invisible_characters($str, false));
     }
 }
