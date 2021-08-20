@@ -431,17 +431,12 @@ class Query
 
             if (is_array($operator))
             {
-                $params = explode($this->bindmarker, $where);
 
-                $_where = '';
+                $this->finalQueryString = $where;
 
-                foreach ($params as $key => $value)
-                {
-                    if (! empty($value))
-                    {
-                        $_where .= $type . $value . (isset($operator[$key]) ? $this->escape($operator[$key]) : '');
-                    }
-                }
+                $this->binds = $operator;
+
+                $_where = $this->compileBinds();
 
                 $where = $_where;
             }
@@ -868,17 +863,11 @@ class Query
     {
         if (is_array($operator))
         {
-            $fields = explode($this->bindmarker, $field);
+            $this->finalQueryString = $field;
 
-            $where = '';
+            $this->binds = $operator;
 
-            foreach ($fields as $key => $value)
-            {
-                if (! empty($value))
-                {
-                    $where .= $value . (isset($operator[$key]) ? $this->escape($operator[$key]) : '');
-                }
-            }
+            $where = $this->compileBinds();
 
             $this->having = $where;
         }
