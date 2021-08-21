@@ -910,7 +910,7 @@ class Query
      */
     public function error()
     {
-        throw new PDOException($this->error . PHP_EOL . $this->query);
+        throw new PDOException($this->error . PHP_EOL . $this->query, 3);
     }
 
     /**

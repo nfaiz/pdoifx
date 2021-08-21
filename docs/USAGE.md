@@ -14,8 +14,6 @@ database.default.DSN = informix:host=host.domain.com;service=9800;database=commo
 database.default.username = testuser
 database.default.password = testpass
 database.default.DBPrefix =
-database.default.charset = utf8
-database.default.DBCollat = utf8_general_ci
 ```
 
 ## Initializing the Database Class

@@ -2,6 +2,9 @@
 
 namespace Nfaiz\PdoIfx;
 
+use PDO;
+use PDOException;
+
 class Connection {
 
     protected $instance;
@@ -30,19 +33,15 @@ class Connection {
         {
             $this->connectTime = microtime(true);
 
-            $pdo = new \PDO($config['DSN'], $config['username'], $config['password']);
+            $pdo = new PDO($config['DSN'], $config['username'], $config['password']);
 
             $this->connectDuration = microtime(true) - $this->connectTime;
 
-            $pdo->exec("SET NAMES '" . $config['charset'] . "' COLLATE '" . $config['DBCollat'] . "'");
-
-            $pdo->exec("SET CHARACTER SET '" . $config['charset'] . "'");
-
-            $pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
+            $pdo->setAttribute(PDO::ATTR_CASE, PDO::CASE_NATURAL);
         }
         catch (PDOException $e)
         {
-            die('Cannot the connect to Database with PDO. ' . $e->getMessage());
+            throw new PDOException("Error connecting to the database: " . $e->getMessage(), 2);
         }
 
         $this->prefix = $config['DBPrefix'];
@@ -65,15 +64,13 @@ class Connection {
 
         if ($config === false)
         {
-            throw new \Exception("Database Connection Group Not found. Check Database Config.", 1);
+            throw new PDOException("Database connection group not found. Check 'app/Config/Database.php'.", 1);
         }
 
         return [
             'DSN' => $config['DSN'],
             'username' => $config['username'],
             'password' => $config['password'],
-            'charset'   => $config['charset'] ?? '',
-            'DBCollat' => $config['DBCollat'] ?? '',
             'DBPrefix' => $this->getPrefix($config)
         ];
     }
