@@ -10,7 +10,7 @@
         "informix"
     ],
     "require": {
-        "nfaiz/dbtoolbar": "^0.9"
+        "nfaiz/dbtoolbar": "^0.9.4"
     },
     "license": "MIT",
     "autoload": {
