@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.9.3](https://github.com/nfaiz/ci4-ifx/compare/v0.9.2...v0.9.3) - 2022-01-22
+
+- BC. Downgrade dbtoolbar to v0.9.4
+
 
 ## [v0.9.2](https://github.com/nfaiz/ci4-ifx/compare/v0.9.1...v0.9.2) - 2021-08-21
 
