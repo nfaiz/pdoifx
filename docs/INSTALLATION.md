@@ -12,7 +12,7 @@
 ## Installation
 Installation can be done via composer
 
-    composer nfaiz/pdoifx
+    composer require nfaiz/pdoifx
 
 
 ## Setup
