@@ -76,17 +76,17 @@ class Informix extends BaseCollector
         if (count(static::$queries) < $max) {
 
             static::$queries[] = [
-                'sql' => $query['sql'],
-                'start' => $query['start'],
-                'end' => $query['end'],
-                'duration' => (float) number_format($query['duration'], 5) * 100,
-                'numRows' => $query['numRows'],
-                'connectTime' => $query['connectTime'],
-                'connectDuration' => $query['connectDuration'],
-                'instance' => $query['instance'],
-                'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
-                'duplicate' => $duplicates ?? false, //TBD
-                'thisRepoFolder' => 'ci4-ifx',
+                'sql'           => $query['sql'],
+                'start'         => $query['start'],
+                'end'           => $query['end'],
+                'duration'      => (float) number_format($query['duration'], 5) * 100,
+                'numRows'       => $query['numRows'],
+                'connectTime'   => $query['connectTime'],
+                'connectDuration'=> $query['connectDuration'],
+                'instance'      => $query['instance'],
+                'trace'         => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+                'duplicate'     => $duplicates ?? false, //TBD
+                'thisRepoFolder'=> 'pdoifx',
             ];
         }
     }

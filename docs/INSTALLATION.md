@@ -1,6 +1,7 @@
 # Docs
-* [Readme](../README.md)
+* Installation
 * [Usage](USAGE.md)
+* [Readme](../README.md)
 
 # Installation
 
@@ -59,7 +60,7 @@ public string $dbToolbarTpl = 'Nfaiz\PdoIfx\Views\queries.tpl';
  *
  * @var boolean
  */
-public bool $dbToolbarDisable = false;
+public bool $dbToolbarDisable = true;
 ```
 
-Please refer [here](https://github.com/nfaiz/dbtoolbar#configuration) for more query styling configurations.
+Please refer [here](https://github.com/nfaiz/dbtoolbar#modify-settings) for more query styling configurations.
