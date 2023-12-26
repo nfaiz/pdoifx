@@ -3,11 +3,9 @@
 ![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=nfaiz/ci4-ifx)
 
 # CI4-Ifx
-CodeIgniter 4 Informix Database Package
 
 ## Description
-CodeIgniter 4 Informix Database Query Builder Using PDO.
-
+Informix wrapper for CodeIgniter 4 using PDO Informix extension.
 
 ## Example Usage
 ```php
@@ -31,3 +29,7 @@ d($result);
 ## Docs
 * [Installation](docs/INSTALLATION.md)
 * [Usage](docs/USAGE.md)
+
+
+> [!NOTE]
+> This is a wrapper for INFORMIX. Don't expect it to work exactly like the CodeIgniter 4 database built-in function.

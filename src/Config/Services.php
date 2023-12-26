@@ -8,8 +8,7 @@ class Services extends BaseService
 {
     public static function ifx($dbGroup = 'default', $getShared = false)
     {
-        if ($getShared)
-        {
+        if ($getShared) {
             return static::getSharedInstance('ifx', $dbGroup);
         }
 

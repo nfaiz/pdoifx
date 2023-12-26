@@ -7,13 +7,10 @@ use PDOException;
 
 class Connection {
 
-    protected $instance;
-
-    public $prefix;
-
-    public $connectTime;
-
-    public $connectDuration;
+    protected string $instance;
+    public ?string $prefix;
+    public ?float $connectTime;
+    public ?float $connectDuration;
 
     public function __construct($instance)
     {
@@ -29,18 +26,12 @@ class Connection {
     {
         $config = $this->getConfig();
 
-        try
-        {
+        try {
             $this->connectTime = microtime(true);
-
             $pdo = new PDO($config['DSN'], $config['username'], $config['password']);
-
             $this->connectDuration = microtime(true) - $this->connectTime;
-
             $pdo->setAttribute(PDO::ATTR_CASE, PDO::CASE_NATURAL);
-        }
-        catch (PDOException $e)
-        {
+        } catch (PDOException $e) {
             throw new PDOException("Error connecting to the database: " . $e->getMessage(), 2);
         }
 
@@ -59,11 +50,9 @@ class Connection {
         $dbConfig = config('Database');
 
         $dbGroup = ($this->instance == '') ? $dbConfig->defaultGroup : $this->instance;
-
         $config = $dbConfig->{$dbGroup} ?? false;
 
-        if ($config === false)
-        {
+        if ($config === false) {
             throw new PDOException("Database connection group not found. Check 'app/Config/Database.php'.", 1);
         }
 
