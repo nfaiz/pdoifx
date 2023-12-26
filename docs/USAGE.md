@@ -1,6 +1,7 @@
 # Docs
-* [Readme](../README.md)
 * [Installation](INSTALLATION.md)
+* Usage
+* [Readme](../README.md)
 
 
 # Usage
@@ -40,7 +41,8 @@ $builder2 = ifx_connect('default2');
 
 ```
 
-Note: If no database connection group specified, **$defaultGroup** value in `app/Config/Database.php` will be used.
+> [!NOTE]
+> If no database connection group specified, **$defaultGroup** value in `app/Config/Database.php` will be used.
 
 
 ## Methods
@@ -101,23 +103,29 @@ $builder->table('table');
 
 $builder->table('table1, table2');
 // Produces: "SELECT * FROM table1, table2" (not final query)
+// Useful for traditional join 
 
 $builder->table('table1 AS t1, table2 AS t2');
 // Produces: "SELECT * FROM table1 AS t1, table2 AS t2" (not final query)
+// Useful for traditional join
 ```
 ```php
 # Usage 2: array parameter
 $builder->table(['table1', 'table2']);
 // Produces: "SELECT * FROM table1, table2" (not final query)
+// Useful for traditional join 
 
 $builder->table(['table1 AS t1', 'table2 AS t2']);
 // Produces: "SELECT * FROM table1 AS t1, table2 AS t2" (not final query)
+// Useful for traditional join 
 ```
 
 ### Result
 
+> [!NOTE]
+> Unlike CodeIgniter 4 built-in function, this library is not using `get()` chaining. Ie `get()->getResult()`.
+
 To get result, use `getRow()` or `getResult()`.  
-Please note this library is not using `get()` as  `get()->getResult()`.
 
 ```php
 $builder->table('users')->getResult(); 
