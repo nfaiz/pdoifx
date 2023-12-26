@@ -1,11 +1,18 @@
+# Docs
+* [Readme](../README.md)
+* [Installation](INSTALLATION.md)
+
 
 # Usage
 
+> [!NOTE]
+> This is a wrapper for INFORMIX. Don't expect it to work exactly like the CodeIgniter 4 database built-in function.
+
 ## Configure Database Connection
 
-Database configuration is same like CodeIgniter 4. See [here](https://www.codeigniter.com/user_guide/database/configuration.html) to create database group connection.
+The database configuration is the same as in CodeIgniter 4. See [here](https://www.codeigniter.com/user_guide/database/configuration.html) to create database group connection.
 
-By using this [example #2](https://www.php.net/manual/en/ref.pdo-informix.connection.php#122191) for Informix DSN connection string;
+Refer [example #2](https://www.php.net/manual/en/ref.pdo-informix.connection.php#122191) for Informix DSN connection string;
 
 E.g for `.env`
 
@@ -84,7 +91,7 @@ Table of Contents
 
 ## Basic usage
 
-Builder can be loaded using `table(string|array $table)` method. 
+Builder can be loaded using `table(string|array $table)`. 
 
 ### Table
 ```php
@@ -109,7 +116,8 @@ $builder->table(['table1 AS t1', 'table2 AS t2']);
 
 ### Result
 
-To get result, use `getRow()` or `getResult()` method.
+To get result, use `getRow()` or `getResult()`.  
+Please note this library is not using `get()` as  `get()->getResult()`.
 
 ```php
 $builder->table('users')->getResult(); 
@@ -122,7 +130,7 @@ $builder->select('email')->table('users')->where('id', 17)->getRow();
 // Produces: "SELECT FIRST 1 email FROM users WHERE id = 17"
 ```
 
-Available **get result**  methods are;
+Available **get result** methods are;
 ```php
 ->getResult() // Returns multiple rows (object)
 ->getRow() // Returns one record (object)

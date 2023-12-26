@@ -3,9 +3,10 @@
 namespace Nfaiz\PdoIfx\Collectors;
 
 use CodeIgniter\Debug\Toolbar\Collectors\BaseCollector;
-use Nfaiz\DbToolbar\Toolbar;
+use Config\Toolbar;
+use Nfaiz\DbToolbar\DbToolbar;
 
-class Database extends BaseCollector
+class Informix extends BaseCollector
 {
     /**
      * Whether this collector has data that can
@@ -52,9 +53,9 @@ class Database extends BaseCollector
      */
     public function __construct()
     {
-        $config = config('Toolbar');
+        $config = config(Toolbar::class);
 
-        $this->title = $config->ifxTitle ?? 'Informix';
+        $this->title = $config->pdoIfxTitle ?? 'Informix';
     }
 
     /**
@@ -67,13 +68,26 @@ class Database extends BaseCollector
      */
     public static function collect(array $query)
     {
-        $config = config('Toolbar');
+        $config = config(Toolbar::class);
 
         // Provide default in case it's not set
         $max = $config->maxQueries ?: 100;
 
         if (count(static::$queries) < $max) {
-            static::$queries[] = $query;
+
+            static::$queries[] = [
+                'sql' => $query['sql'],
+                'start' => $query['start'],
+                'end' => $query['end'],
+                'duration' => (float) number_format($query['duration'], 5) * 100,
+                'numRows' => $query['numRows'],
+                'connectTime' => $query['connectTime'],
+                'connectDuration' => $query['connectDuration'],
+                'instance' => $query['instance'],
+                'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+                'duplicate' => $duplicates ?? false, //TBD
+                'thisRepoFolder' => 'ci4-ifx',
+            ];
         }
     }
 
@@ -85,13 +99,10 @@ class Database extends BaseCollector
     protected function formatTimelineData(): array
     {
         $data = [];
-
         $instance = '';
 
-        foreach (static::$queries as $query)
-        {
-            if ($instance != $query['instance'])
-            {
+        foreach (static::$queries as $query) {
+            if ($instance != $query['instance']) {
                 $data[] = [
                     'name'      => 'Connecting to Database: ' . $query['instance'],
                     'component' => 'Database',
@@ -103,13 +114,12 @@ class Database extends BaseCollector
             $instance = $query['instance'];
         }
 
-        foreach (static::$queries as $query)
-        {
+        foreach (static::$queries as $query) {
             $data[] = [
                 'name'      => 'Query',
                 'component' => 'Database',
                 'start'     => $query['start'],
-                'duration'  => (float) number_format(($query['end'] - $query['start']), 6),
+                'duration'  => (float) number_format(($query['end'] - $query['start']), 5) * 100,
             ];
         }
 
@@ -123,9 +133,9 @@ class Database extends BaseCollector
      */
     public function display(): string
     {
-        $toolbar = new Toolbar(static::$queries);
+        $toolbar = new DbToolbar(static::$queries);
 
-        return $toolbar->display('Nfaiz\PdoIfx\Views\queries.tpl');
+        return $toolbar->display();
     }
 
     /**
@@ -147,14 +157,13 @@ class Database extends BaseCollector
     {
         $instances = [];
 
-        foreach (static::$queries as $query)
-        {
+        foreach (static::$queries as $query) {
             array_push($instances, $query['instance']);
         }
 
-        return '(' . count(static::$queries) . ' Queries across ' .
-            ($countConnection = count(array_count_values($instances))) . ' Connection' . ($countConnection > 1 ? 's' : '') .
-        ')';
+        return '(' . count(static::$queries) . ' Queries across ' 
+                . ($countConnection = count(array_count_values($instances))) 
+                . ' Connection' . ($countConnection > 1 ? 's' : '') . ')';
     }
 
     /**
@@ -176,6 +185,6 @@ class Database extends BaseCollector
      */
     public function icon(): string
     {
-        return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADMSURBVEhLY6A3YExLSwsA4nIycQDIDIhRWEBqamo/UNF/SjDQjF6ocZgAKPkRiFeEhoYyQ4WIBiA9QAuWAPEHqBAmgLqgHcolGQD1V4DMgHIxwbCxYD+QBqcKINseKo6eWrBioPrtQBq/BcgY5ht0cUIYbBg2AJKkRxCNWkDQgtFUNJwtABr+F6igE8olGQD114HMgHIxAVDyAhA/AlpSA8RYUwoeXAPVex5qHCbIyMgwBCkAuQJIY00huDBUz/mUlBQDqHGjgBjAwAAACexpph6oHSQAAAAASUVORK5CYII=';
+        return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAvUlEQVR4nO2UPQrCQBCFv8JScwpLDyDiESw8gGewtvcgHsNS8Ay2/jSCnaVaxEhgBxbJjLHb1fngkWT2kZe8kAXHcZwEqBRZa7UuwBLoKN4HUEQ5AyMnzwaqoIPhXUU522QbEKwnalqT2RPoNcxFQ2CW9Jt/08C77sBY8R7DcQdcw/np5xq4ASPFW4S9IG7kU05ef8EmzEqgq3gX0fW0RU6eO+Fe8Qr1t18befk2cAbmxn2ECdBv4XMc5095AVOopIQ472yAAAAAAElFTkSuQmCC';
     }
 }

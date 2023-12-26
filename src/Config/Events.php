@@ -3,16 +3,15 @@
 namespace Nfaiz\PdoIfx\Config;
 
 use CodeIgniter\Events\Events;
+use Config\Toolbar;
 
 Events::on('pre_system', function () {
 
-    $config = config('Toolbar');
+    $config = config(Toolbar::class);
 
-    helper('ifx');
-
-    if (isset($config->ifxCollector) && $config->ifxCollector === true)
-    {
-        Events::on('PdoIfx', '\Nfaiz\PdoIfx\Collectors\Database::collect');
+    if (isset($config->pdoIfxCollector) && $config->pdoIfxCollector === true) {
+        helper('ifx');
+        Events::on('PdoIfx', '\Nfaiz\PdoIfx\Collectors\Informix::collect');
     }
 
 });

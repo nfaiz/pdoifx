@@ -5,12 +5,11 @@
     "keywords": [
         "codeigniter",
         "codeigniter4",
-        "debug",
         "pdo",
         "informix"
     ],
     "require": {
-        "nfaiz/dbtoolbar": "^0.9.4"
+        "nfaiz/dbtoolbar": "^1.0.0"
     },
     "license": "MIT",
     "autoload": {

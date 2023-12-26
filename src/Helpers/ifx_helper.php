@@ -2,8 +2,8 @@
 
 if (! function_exists('ifx_connect'))
 {
-    function ifx_connect($instance)
+    function ifx_connect($dbGroup = 'default')
     {
-        return service('ifx', $instance);
+        return service('ifx', $dbGroup);
     }
 }

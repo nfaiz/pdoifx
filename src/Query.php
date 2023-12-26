@@ -13,111 +13,69 @@ class Query
 {
     public $pdo = null;
 
-    protected $select = '*';
+    protected string $select = '*';
+    protected string $instance = '';
+    protected ?string $from = null;
+    protected ?string $where = null;
+    protected ?string $limit = null;
+    protected ?string $offset = null;
+    protected ?string $join = null;
+    protected ?string $orderBy = null;
+    protected ?string $groupBy = null;
+    protected ?string $having = null;
+    protected ?string $bindMarker = '?';
+    protected ?string $insertId = null;
+    protected ?string $query = null;
+    protected ?string $error = null;
+    protected ?string $prefix = null;
+    protected bool $grouped = false;
+    protected int $queryCount = 0;
+    protected int $transactionCount = 0;
+    protected int $numRows = 0;
+    protected ?float $connectTime;
+    protected ?float $connectDuration;
+    protected array $result = [];
+    protected array $joinTypes = ['LEFT','RIGHT','OUTER','INNER','LEFT OUTER','RIGHT OUTER'];
+    protected array $operators = ['=', '!=', '<', '>', '<=', '>=', '<>'];
 
-    protected $from = null;
-
-    protected $where = null;
-
-    protected $limit = null;
-
-    protected $offset = null;
-
-    protected $join = null;
-
-    protected $orderBy = null;
-
-    protected $groupBy = null;
-
-    protected $having = null;
-
-    protected $grouped = false;
-
-    protected $numRows = 0;
-
-    protected $insertId = null;
-
-    protected $query = null;
-
-    protected $error = null;
-
-    protected $result = [];
-
-    protected $prefix = null;
-
-    protected $joinTypes = [
-        'LEFT',
-        'RIGHT',
-        'OUTER',
-        'INNER',
-        'LEFT OUTER',
-        'RIGHT OUTER',
-    ];
-
-    protected $operators = ['=', '!=', '<', '>', '<=', '>=', '<>'];
-
-    protected $queryCount = 0;
-
-    protected $transactionCount = 0;
-
-    protected $connectTime;
-
-    protected $connectDuration;
-
-    protected $instance;
-
-    protected $bindMarker = '?';
-
-    public function __construct(string $instance = '')
+    public function __construct(string $instance = 'default')
     {
         $informix = new Connection($instance);
 
         $this->pdo = $informix->getPdo();
-
         $this->connectTime = $informix->connectTime;
-
         $this->connectDuration = $informix->connectDuration;
-
         $this->prefix = $informix->prefix ?: '';
-
         $this->instance = $instance;
 
         return $this->pdo;
     }
 
     /**
-     * @param $table
+     * @param array|string $table
      *
      * @return $this
      */
     public function table($table)
     {
-        if (is_array($table))
-        {
+        if (is_array($table)) {
             $from = '';
 
-            foreach ($table as $key)
-            {
+            foreach ($table as $key) {
                 $from .= $this->prefix . $key . ', ';
             }
 
             $this->from = rtrim($from, ', ');
-        }
-        else
-        {
-            if (strpos($table, ',') > 0)
-            {
+        } else {
+            if (strpos($table, ',') > 0) {
                 $tables = explode(',', $table);
 
-                foreach ($tables as $key => &$value)
-                {
+                foreach ($tables as $key => &$value) {
                     $value = $this->prefix . ltrim($value);
                 }
 
                 $this->from = implode(', ', $tables);
-            }
-            else
-            {
+            } else {
                 $this->from = $this->prefix . $table;
             }
         }
@@ -133,7 +91,6 @@ class Query
     public function select($fields)
     {
         $select = is_array($fields) ? implode(', ', $fields) : $fields;
-
         $this->optimizeSelect($select);
 
         return $this;
@@ -148,7 +105,6 @@ class Query
     public function max(string $field, $name = null)
     {
         $column = 'MAX(' . $field . ')' . (! is_null($name) ? ' AS ' . $name : '');
-
         $this->optimizeSelect($column);
 
         return $this;
@@ -173,7 +129,6 @@ class Query
     public function min(string $field, $name = null)
     {
         $column = 'MIN(' . $field . ')' . (! is_null($name) ? ' AS ' . $name : '');
-
         $this->optimizeSelect($column);
 
         return $this;
@@ -198,7 +153,6 @@ class Query
     public function sum(string $field, $name = null)
     {
         $column = 'SUM(' . $field . ')' . (! is_null($name) ? ' AS ' . $name : '');
-
         $this->optimizeSelect($column);
 
         return $this;
@@ -223,7 +177,6 @@ class Query
     public function count(string $field, $name = null)
     {
         $column = 'COUNT(' . $field . ')' . (! is_null($name) ? ' AS ' . $name : '');
-
         $this->optimizeSelect($column);
 
         return $this;
@@ -248,7 +201,6 @@ class Query
     public function avg(string $field, $name = null)
     {
         $column = 'AVG(' . $field . ')' . (! is_null($name) ? ' AS ' . $name : '');
-
         $this->optimizeSelect($column);
 
         return $this;
@@ -278,65 +230,45 @@ class Query
      */
     public function join(string $table, string $cond, string $type = '', bool $escape = null)
     {
-        if ($type !== '')
-        {
+        if ($type !== '') {
             $type = strtoupper(trim($type));
 
-            if (! in_array($type, $this->joinTypes, true))
-            {
+            if (! in_array($type, $this->joinTypes, true)) {
                 $type = '';
-            }
-            else
-            {
+            } else {
                 $type .= ' ';
             }
         }
 
-        if (! $this->hasOperator($cond))
-        {
+        if (! $this->hasOperator($cond)) {
             $cond = ' USING (' . $cond . ')';
-        }
-        elseif ($escape === false)
-        {
+        } elseif ($escape === false) {
             $cond = ' ON ' . $cond;
-        }
-        else
-        {
+        } else {
             // Split multiple conditions
-            if (preg_match_all('/\sAND\s|\sOR\s/i', $cond, $joints, PREG_OFFSET_CAPTURE))
-            {
+            if (preg_match_all('/\sAND\s|\sOR\s/i', $cond, $joints, PREG_OFFSET_CAPTURE)) {
                 $conditions = [];
-
                 $joints     = $joints[0];
 
                 array_unshift($joints, ['', 0]);
 
-                for ($i = count($joints) - 1, $pos = strlen($cond); $i >= 0; $i --)
-                {
+                for ($i = count($joints) - 1, $pos = strlen($cond); $i >= 0; $i --) {
                     $joints[$i][1] += strlen($joints[$i][0]); // offset
-
                     $conditions[$i] = substr($cond, $joints[$i][1], $pos - $joints[$i][1]);
-
                     $pos            = $joints[$i][1] - strlen($joints[$i][0]);
-
                     $joints[$i]     = $joints[$i][0];
                 }
 
                 ksort($conditions);
-            }
-            else
-            {
+            } else {
                 $conditions = [$cond];
-
                 $joints     = [''];
             }
 
             $cond = ' ON ';
 
-            foreach ($conditions as $i => $condition)
-            {
+            foreach ($conditions as $i => $condition) {
                 $operator = $this->getOperator($condition);
-
                 $cond .= $joints[$i];
 
                 $cond .= preg_match("/(\(*)?([\[\]\w\.'-]+)" . preg_quote($operator) . '(.*)/i', $condition, $match)
@@ -375,8 +307,7 @@ class Query
     {
         static $_operators;
 
-        if (empty($_operators))
-        {
+        if (empty($_operators)) {
             $_les       = '';
 
             $_operators = [
@@ -411,49 +342,34 @@ class Query
      */
     public function where($where, $operator = null, $val = null, $type = '', $andOr = 'AND')
     {
-        if (is_array($where) && ! empty($where))
-        {
+        if (is_array($where) && ! empty($where)) {
             $_where = [];
 
-            foreach ($where as $column => $data)
-            {
+            foreach ($where as $column => $data) {
                 $_where[] = $type . $column . '=' . $this->escape($data);
             }
 
             $where = implode(' ' . $andOr . ' ', $_where);
-        }
-        else
-        {
-            if (is_null($where) || empty($where))
-            {
+        } else {
+            if (is_null($where) || empty($where)) {
                 return $this;
             }
 
-            if (is_array($operator))
-            {
-
+            if (is_array($operator)) {
                 $this->finalQueryString = $where;
-
                 $this->binds = $operator;
 
                 $_where = $this->compileBinds();
-
                 $where = $_where;
-            }
-            elseif (! in_array($operator, $this->operators) || $operator == false)
-            {
+            } elseif (! in_array($operator, $this->operators) || $operator == false) {
                 $where = $type . $where . ' = ' . $this->escape($operator);
-            }
-            else
-            {
+            } else {
                 $where = $type . $where . ' ' . $operator . ' ' . $this->escape($val);
             }
         }
 
-        if ($this->grouped)
-        {
+        if ($this->grouped) {
             $where = '(' . $where;
-
             $this->grouped = false;
         }
 
@@ -519,7 +435,6 @@ class Query
     public function whereNull(string $where, bool $not = false, string $andOr = 'AND')
     {
         $where = $where . ' IS ' . ($not ? 'NOT' : '') . ' NULL';
-
         $this->optimizeWhere($where, $andOr);
 
         return $this;
@@ -565,9 +480,7 @@ class Query
     public function grouped(Closure $obj)
     {
         $this->grouped = true;
-
         call_user_func_array($obj, [$this]);
-
         $this->where .= ')';
 
         return $this;
@@ -583,21 +496,17 @@ class Query
      */
     public function whereIn(string $field, array $keys, string $andOr = 'AND', string $type = '')
     {
-        if (is_array($keys))
-        {
+        if (is_array($keys)) {
             $_keys = [];
 
-            foreach ($keys as $k => $v)
-            {
+            foreach ($keys as $k => $v) {
                 $_keys[] = is_numeric($v) ? $v : $this->escape($v);
             }
 
             $where = $field . ' ' . $type . 'IN (' . implode(', ', $_keys) . ')';
 
-            if ($this->grouped)
-            {
+            if ($this->grouped) {
                 $where = '(' . $where;
-
                 $this->grouped = false;
             }
 
@@ -654,10 +563,8 @@ class Query
     {
         $where = '(' . $field . ' ' . $type . 'BETWEEN ' . ($this->escape($value1) . ' AND ' . $this->escape($value2)) . ')';
 
-        if ($this->grouped)
-        {
+        if ($this->grouped) {
             $where = '(' . $where;
-
             $this->grouped = false;
         }
 
@@ -714,19 +621,14 @@ class Query
     {
         $like = $this->escape($data);
 
-        if ($caseInsensitive == true)
-        {
+        if ($caseInsensitive == true) {
             $where = 'lower('. $field .') ' . $type . 'LIKE ' . strtolower($like);
-        }
-        else
-        {
+        } else {
             $where =  $field . ' ' . $type . 'LIKE ' . $like;
         }
 
-        if ($this->grouped)
-        {
+        if ($this->grouped) {
             $where = '(' . $where;
-
             $this->grouped = false;
         }
 
@@ -826,12 +728,9 @@ class Query
      */
     public function orderBy(string $orderBy, $orderDir = null)
     {
-        if (! is_null($orderDir))
-        {
+        if (! is_null($orderDir)) {
             $this->orderBy = $orderBy . ' ' . strtoupper($orderDir);
-        }
-        else
-        {
+        } else {
             $this->orderBy = stristr($orderBy, ' ')
                 ? $orderBy
                 : $orderBy . ' ASC';
@@ -861,22 +760,14 @@ class Query
      */
     public function having(string $field, $operator = null, $val = null)
     {
-        if (is_array($operator))
-        {
+        if (is_array($operator)) {
             $this->finalQueryString = $field;
-
             $this->binds = $operator;
-
             $where = $this->compileBinds();
-
             $this->having = $where;
-        }
-        elseif (! in_array($operator, $this->operators))
-        {
+        } elseif (! in_array($operator, $this->operators)) {
             $this->having = $field . ' > ' . $this->escape($operator);
-        }
-        else
-        {
+        } else {
             $this->having = $field . ' ' . $operator . ' ' . $this->escape($val);
         }
 
@@ -922,7 +813,6 @@ class Query
     public function get($type = null, $argument = null)
     {
         $this->limit = 1;
-
         $query = $this->getAll(true);
 
         return $type === true ? $query : $this->query($query, false, $type, $argument);
@@ -959,40 +849,33 @@ class Query
     {
         $query = 'SELECT ';
 
-        if (! is_null($this->offset))
-        {
+        if (! is_null($this->offset)) {
             $query .= 'SKIP ' . $this->offset . ' ';
         }
 
-        if (! is_null($this->limit))
-        {
+        if (! is_null($this->limit)) {
             $query .= 'FIRST ' . $this->limit . ' ';
         }
 
         $query .= $this->select . ' FROM ' . $this->from;
 
-        if (! is_null($this->join))
-        {
+        if (! is_null($this->join)) {
             $query .= $this->join;
         }
 
-        if (! is_null($this->where))
-        {
+        if (! is_null($this->where)) {
             $query .= ' WHERE ' . $this->where;
         }
 
-        if (! is_null($this->groupBy))
-        {
+        if (! is_null($this->groupBy)) {
             $query .= ' GROUP BY ' . $this->groupBy;
         }
 
-        if (! is_null($this->having))
-        {
+        if (! is_null($this->having)) {
             $query .= ' HAVING ' . $this->having;
         }
 
-        if (! is_null($this->orderBy))
-        {
+        if (! is_null($this->orderBy)) {
             $query .= ' ORDER BY ' . $this->orderBy;
         }
 
@@ -1020,23 +903,18 @@ class Query
 
         $values = array_values($data);
 
-        if (isset($values[0]) && is_array($values[0]))
-        {
+        if (isset($values[0]) && is_array($values[0])) {
             $column = implode(', ', array_keys($values[0]));
-
             $query .= ' (' . $column . ') VALUES ';
 
-            foreach ($values as $value)
-            {
+            foreach ($values as $value) {
                 $val = implode(', ', array_map([$this, 'escape'], $value));
 
                 $query .= '(' . $val . '), ';
             }
 
             $query = trim($query, ', ');
-        }
-        else
-        {
+        } else {
             $column = implode(', ', array_keys($data));
 
             $val = implode(', ', array_map([$this, 'escape'], $data));
@@ -1044,13 +922,11 @@ class Query
             $query .= ' (' . $column . ') VALUES (' . $val . ')';
         }
 
-        if ($type === true)
-        {
+        if ($type === true) {
             return $query;
         }
 
-        if ($this->query($query, false))
-        {
+        if ($this->query($query, false)) {
             $this->insertId = $this->pdo->lastInsertId();
 
             return $this->insertId();
@@ -1070,20 +946,17 @@ class Query
 
         $values = [];
 
-        foreach ($data as $column => $val)
-        {
+        foreach ($data as $column => $val) {
             $values[] = $column . ' = ' . $this->escape($val);
         }
 
         $query .= implode(', ', $values);
 
-        if (! is_null($this->where))
-        {
+        if (! is_null($this->where)) {
             $query .= ' WHERE ' . $this->where;
         }
 
-        if (! is_null($this->orderBy))
-        {
+        if (! is_null($this->orderBy)) {
             $query .= ' ORDER BY ' . $this->orderBy;
         }
 
@@ -1099,18 +972,15 @@ class Query
     {
         $query = 'DELETE FROM ' . $this->from;
 
-        if (! is_null($this->where))
-        {
+        if (! is_null($this->where)) {
             $query .= ' WHERE ' . $this->where;
         }
 
-        if (! is_null($this->orderBy))
-        {
+        if (! is_null($this->orderBy)) {
             $query .= ' ORDER BY ' . $this->orderBy;
         }
 
-        if ($query === 'DELETE FROM ' . $this->from)
-        {
+        if ($query === 'DELETE FROM ' . $this->from) {
             $query = 'TRUNCATE TABLE ' . $this->from;
         }
 
@@ -1124,8 +994,7 @@ class Query
      */
     public function beginTransaction()
     {
-        if (! $this->transactionCount)
-        {
+        if (! $this->transactionCount) {
             $this->transactionCount++;
 
             return $this->pdo->beginTransaction();
@@ -1153,8 +1022,7 @@ class Query
      */
     public function commit()
     {
-        if ($this->transactionCount)
-        {
+        if ($this->transactionCount) {
             return $this->pdo->commit();
         }
 
@@ -1168,10 +1036,8 @@ class Query
      */
     public function rollBack()
     {
-        if ($this->transactionCount)
-        {
+        if ($this->transactionCount) {
             $this->pdo->exec('ROLLBACK TO trans' . $this->transactionCount);
-
             $this->transactionCount--;
 
             return true;
@@ -1187,8 +1053,7 @@ class Query
      */
     public function exec()
     {
-        if (is_null($this->query))
-        {
+        if (is_null($this->query)) {
             return null;
         }
 
@@ -1198,10 +1063,8 @@ class Query
 
         $end = microtime(true);
 
-        if ($query === false)
-        {
+        if ($query === false) {
             $this->error = $this->pdo->errorInfo()[2];
-
             $this->error();
         }
 
@@ -1217,8 +1080,7 @@ class Query
      */
     public function fetch($type = null, $argument = null, $all = false)
     {
-        if (is_null($this->query))
-        {
+        if (is_null($this->query)) {
             return null;
         }
 
@@ -1226,8 +1088,7 @@ class Query
 
         $query = $this->pdo->query($this->query);
 
-        if (! $query)
-        {
+        if (! $query) {
             $this->error = $this->pdo->errorInfo()[2];
 
             $this->error();
@@ -1235,23 +1096,17 @@ class Query
 
         $type = $this->getFetchType($type);
 
-        if ($type === PDO::FETCH_CLASS)
-        {
+        if ($type === PDO::FETCH_CLASS) {
             $query->setFetchMode($type, $argument);
-        }
-        else
-        {
+        } else {
             $query->setFetchMode($type);
         }
 
         $result = $all ? $query->fetchAll() : $query->fetch();
-
         $end = microtime(true);
-
         $result = ($this->result === false) ? [] : $result;
 
         $this->numRows = is_array($result) ? count($result) : 1;
-
         $this->triggerEvent($this->query, $start, $end, $this->numRows);
 
         return $result;
@@ -1296,14 +1151,10 @@ class Query
     {
         $this->reset();
 
-        if (is_array($all) || func_num_args() === 1)
-        {
+        if (is_array($all) || func_num_args() === 1) {
             $this->finalQueryString = $query;
-
             $this->binds = $all;
-
             $newQuery = $this->compileBinds();
-
             $this->query = $newQuery;
 
             return $this;
@@ -1313,59 +1164,45 @@ class Query
 
         $str = false;
 
-        foreach (['select'] as $value)
-        {
-            if (stripos($this->query, $value) === 0)
-            {
+        foreach (['select'] as $value) {
+            if (stripos($this->query, $value) === 0) {
                 $str = true;
                 break;
             }
         }
 
         $type = $this->getFetchType($type);
-
         $start = microtime(true);
 
-        if ($str)
-        {
+        if ($str) {
             $sql = $this->pdo->query($this->query);
 
             $end = microtime(true);
 
-            if ($sql)
-            {
+            if ($sql) {
                 $this->numRows = $sql->rowCount();
 
-                if ($type === PDO::FETCH_CLASS)
-                {
+                if ($type === PDO::FETCH_CLASS) {
                     $sql->setFetchMode($type, $argument);
-                }
-                else
-                {
+                } else {
                     $sql->setFetchMode($type);
                 }
 
                 $this->result = $all ? $sql->fetchAll() : $sql->fetch();
 
                 $this->result = ($this->result === false) ? [] : $this->result;
-            }
-            else
-            {
+            } else {
                 $this->error = $this->pdo->errorInfo()[2];
 
                 $this->error();
             }
 
 
-        }
-        else
-        {
+        } else {
             $this->result = $this->pdo->exec($this->query);
-
             $end = microtime(true);
 
-            if ($this->result === false)
-            {
+            if ($this->result === false) {
                 $this->error = $this->pdo->errorInfo()[2];
 
                 $this->error();
@@ -1374,15 +1211,13 @@ class Query
 
         $this->numRows = is_array($this->result) ? count($this->result) : (empty($this->result) ? 0 : 1);
 
-        if ($type == PDO::FETCH_ASSOC)
-        {
+        if ($type == PDO::FETCH_ASSOC) {
             $this->numRows = is_array($this->result) && count($this->result) != count($this->result, COUNT_RECURSIVE)
                 ? count($this->result)
                 : (empty($this->result) ? 0 : 1);
         }
 
         $this->triggerEvent($this->query, $start, $end, $this->numRows);
-
         $this->queryCount++;
 
         return $this->result;
@@ -1412,6 +1247,17 @@ class Query
     public function getLastQuery()
     {
         return $this->query;
+    }
+
+    /**
+     * Returns the duration of this query during execution, or null if
+     * the query has not been executed yet.
+     *
+     * @param int $decimals The accuracy of the returned time.
+     */
+    public function getDuration(int $decimals = 6): string
+    {
+        return number_format(($this->connectDuration), $decimals);
     }
 
     /**
@@ -1503,6 +1349,8 @@ class Query
         Events::trigger('PdoIfx', $query);
     }
 
+    // Inspired from CI4 compileBinds
+
     private function compileBinds()
     {
         $sql = $this->finalQueryString;
@@ -1512,32 +1360,28 @@ class Query
         if (empty($this->binds)
             || empty($this->bindMarker)
             || (! $hasNamedBinds && strpos($sql, $this->bindMarker) === false)
-        )
-        {
+        ) {
             return;
         }
 
-        if (! is_array($this->binds))
-        {
+        if (! is_array($this->binds)) {
             $binds     = [$this->binds];
             $bindCount = 1;
-        }
-        else
-        {
+        } else {
             $binds     = $this->binds;
             $bindCount = count($binds);
         }
 
         // Reverse the binds so that duplicate named binds
         // will be processed prior to the original binds.
-        if (! is_numeric(key(array_slice($binds, 0, 1))))
-        {
+        if (! is_numeric(key(array_slice($binds, 0, 1)))) {
             $binds = array_reverse($binds);
         }
 
         $ml = strlen($this->bindMarker);
-
-        $sql = $hasNamedBinds ? $this->matchNamedBinds($sql, $binds) : $this->matchSimpleBinds($sql, $binds, $bindCount, $ml);
+        $sql = $hasNamedBinds 
+                ? $this->matchNamedBinds($sql, $binds) 
+                : $this->matchSimpleBinds($sql, $binds, $bindCount, $ml);
 
         return $sql;
     }
@@ -1553,12 +1397,10 @@ class Query
     {
         $replacers = [];
 
-        foreach ($binds as $placeholder => $value)
-        {
+        foreach ($binds as $placeholder => $value) {
             $escapedValue = $this->escape($value);
 
-            if (is_array($value))
-            {
+            if (is_array($value)) {
                 $escapedValue = '(' . implode(', ', $escapedValue) . ')';
             }
 
@@ -1580,28 +1422,23 @@ class Query
     private function matchSimpleBinds(string $sql, array $binds, int $bindCount, int $ml): string
     {
         // Make sure not to replace a chunk inside a string that happens to match the bind marker
-        if ($c = preg_match_all("/'[^']*'/", $sql, $matches))
-        {
+        if ($c = preg_match_all("/'[^']*'/", $sql, $matches)) {
             $c = preg_match_all('/' . preg_quote($this->bindMarker, '/') . '/i', str_replace($matches[0], str_replace($this->bindMarker, str_repeat(' ', $ml), $matches[0]), $sql, $c), $matches, PREG_OFFSET_CAPTURE);
 
             // Bind values' count must match the count of markers in the query
-            if ($bindCount !== $c)
-            {
+            if ($bindCount !== $c) {
                 return $sql;
             }
         }
         // Number of binds must match bindMarkers in the string.
-        elseif (($c = preg_match_all('/' . preg_quote($this->bindMarker, '/') . '/i', $sql, $matches, PREG_OFFSET_CAPTURE)) !== $bindCount)
-        {
+        elseif (($c = preg_match_all('/' . preg_quote($this->bindMarker, '/') . '/i', $sql, $matches, PREG_OFFSET_CAPTURE)) !== $bindCount) {
             return $sql;
         }
 
-        do
-        {
+        do {
             $c--;
             $escapedValue = $this->escape($binds[$c]);
-            if (is_array($escapedValue))
-            {
+            if (is_array($escapedValue)) {
                 $escapedValue = '(' . implode(', ', $escapedValue) . ')';
             }
             $sql = substr_replace($sql, $escapedValue, $matches[0][$c][1], $ml);
@@ -1621,28 +1458,23 @@ class Query
      */
     private function escape($str)
     {
-        if (is_array($str))
-        {
+        if (is_array($str)) {
             return array_map([&$this, 'escape'], $str);
         }
 
-        if (is_string($str))
-        {
+        if (is_string($str)) {
             return "'" . $this->escapeString($str) . "'";
         }
 
-        if (is_bool($str))
-        {
+        if (is_bool($str)) {
             return ($str === false) ? 0 : 1;
         }
 
-        if (is_numeric($str) && $str < 0)
-        {
+        if (is_numeric($str) && $str < 0) {
             return "{$str}";
         }
 
-        if ($str === null)
-        {
+        if ($str === null) {
             return 'NULL';
         }
 
@@ -1658,10 +1490,8 @@ class Query
      */
     private function escapeString($str)
     {
-        if (is_array($str))
-        {
-            foreach ($str as $key => $val)
-            {
+        if (is_array($str)) {
+            foreach ($str as $key => $val) {
                 $str[$key] = $this->escapeString($val, $like);
             }
 

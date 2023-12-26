@@ -3,16 +3,29 @@
     <thead>
         <tr>
             <th class="debug-bar-width6r">Time</th>
-            <th class="debug-bar-width4r"><small>Row</small></th>
             <th>Query String</th>
         </tr>
     </thead>
     <tbody>
     {queries}
-        <tr>
-            <td class="narrow">{duration}</td>
-            <td class="narrow">{numRows}</td>
-            <td class="narrow">{! sql !}</td>
+        <tr class="{class}" title="{hover}" data-toggle="{qid}-trace">
+            <td class="narrow" style="vertical-align: top;">
+                <small>
+                    {duration}<br>
+                    <u>Record(s):</u><br>
+                    {numRows}
+                </small>
+            </td>
+            <td><u>{trace-file}</u>{! sql !}</td>
+        </tr>
+        <tr class="muted" id="{qid}-trace" style="display:none">
+            <td></td>
+            <td>
+            {trace}
+                {index}<strong>{file}</strong><br/>
+                {function}<br/><br/>
+            {/trace}
+            </td>
         </tr>
     {/queries}
     </tbody>

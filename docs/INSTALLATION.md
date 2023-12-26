@@ -1,32 +1,21 @@
+# Docs
+* [Readme](../README.md)
+* [Usage](USAGE.md)
+
 # Installation
 
+## Requirement
+- [PDO Informix](https://pecl.php.net/package/PDO_INFORMIX) extension installed.
+
+
 ## Installation
-Installation an be done via composer
+Installation can be done via composer
 
     composer nfaiz/pdoifx
 
 
-## Toolbar.php
-Open `app/Config/Toolbar.php`
-
-Add `\Nfaiz\PdoIfx\Collectors\Database::class` in **$collectors** property
-
-```diff
-
-public $collectors = [
-    Timers::class,
-    Database::class,
-+   \Nfaiz\PdoIfx\Collectors\Database::class
-    Logs::class,
-    Views::class,
-    // \CodeIgniter\Debug\Toolbar\Collectors\Cache::class,
-    Files::class,
-    Routes::class,
-    Events::class,
-];
-```
-
-and add properties below;
+## Setup
+Add properties below to `app/Config/Toolbar.php`;
 
 ```php
 /**
@@ -36,7 +25,7 @@ and add properties below;
  *
  * @var boolean
  */
-public $ifxCollector = true;
+public bool $pdoIfxCollector = true;
 
 /**
  * -------------------------------------------------------------
@@ -48,54 +37,29 @@ public $ifxCollector = true;
  * 
  * @var boolean
  */
-public $ifxTitle = 'Informix';
-```
+public string $pdoIfxTitle = 'Informix';
 
-For query styling add properties below. (Optional)
-
-```php
 /**
  * -------------------------------------------------------------
- * Query Theme
+ * DbToolbar View
  * -------------------------------------------------------------
  * 
- * Configuration for light and dark mode SQL syntax highlighter.
+ * To override DbToolbar query Highlighter view.
  *
  * @var array
  */
-public $queryTheme = [
-    'light' => 'default',
-    'dark'  => 'dark'
-];
+public string $dbToolbarTpl = 'Nfaiz\PdoIfx\Views\queries.tpl';
 
 /**
  * -------------------------------------------------------------
- * Bottom Margin Between Diplayed Query in Toolbar
+ * Disable DbToolbar query Highlighter
  * -------------------------------------------------------------
  * 
- * Value in px
- * 
- * @var int
- */
-public $queryMarginBottom = 4;
-
-/**
- * -------------------------------------------------------------
- * Log Queries
- * -------------------------------------------------------------
- *
- * Need to set threshold to minimum 7 at app/Config/Logger.php
+ * To disable DbToolbar query highlighter, change value to true
  *
  * @var boolean
  */
-public $logger = false;
-
+public bool $dbToolbarDisable = false;
 ```
 
-Refer [here](https://github.com/nfaiz/dbtoolbar#configuration) for query styling configurations.
-
-
-## Docs
-* [Readme](../README.md)
-* [Usage](USAGE.md)
-
+Please refer [here](https://github.com/nfaiz/dbtoolbar#configuration) for more query styling configurations.
