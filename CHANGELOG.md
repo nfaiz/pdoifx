@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.9.6](https://github.com/nfaiz/ci4-ifx/compare/v0.9.5...v0.9.6) - 2024-04-22
+
+### Enhancement
+- Add support to CodeIgniter 4.4.6.
+
 ## [v0.9.5](https://github.com/nfaiz/ci4-ifx/compare/v0.9.4...v0.9.5) - 2023-12-26
 
 ### Enhancement
