@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.9.7](https://github.com/nfaiz/ci4-ifx/compare/v0.9.6...v0.9.7) - 2024-12-17
+
+### Enhancement
+- Fix return SQL.
+
 ## [v0.9.6](https://github.com/nfaiz/ci4-ifx/compare/v0.9.5...v0.9.6) - 2024-04-22
 
 ### Enhancement
