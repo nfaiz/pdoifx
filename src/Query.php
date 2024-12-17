@@ -1361,7 +1361,7 @@ class Query
             || empty($this->bindMarker)
             || (! $hasNamedBinds && strpos($sql, $this->bindMarker) === false)
         ) {
-            return;
+            return $sql;
         }
 
         if (! is_array($this->binds)) {
