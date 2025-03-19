@@ -34,7 +34,7 @@ class Query
     protected int $numRows = 0;
     protected ?float $connectTime;
     protected ?float $connectDuration;
-    protected array $result = [];
+    protected mixed $result;
     protected array $joinTypes = ['LEFT','RIGHT','OUTER','INNER','LEFT OUTER','RIGHT OUTER'];
     protected array $operators = ['=', '!=', '<', '>', '<=', '>=', '<>'];
 
