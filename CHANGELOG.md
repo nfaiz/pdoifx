@@ -1,24 +1,30 @@
 # Changelog
 
+
 ## [v0.9.8](https://github.com/nfaiz/ci4-ifx/compare/v0.9.7...v0.9.8) - 2024-03-19
 
 ### Bug
-- Fix type.
+- Fix property type.
+
 
 ## [v0.9.7](https://github.com/nfaiz/ci4-ifx/compare/v0.9.6...v0.9.7) - 2024-12-17
 
 ### Bug
+=======
 - Fix return SQL.
+
 
 ## [v0.9.6](https://github.com/nfaiz/ci4-ifx/compare/v0.9.5...v0.9.6) - 2024-04-22
 
 ### Enhancement
 - Add support to CodeIgniter 4.4.6.
 
+
 ## [v0.9.5](https://github.com/nfaiz/ci4-ifx/compare/v0.9.4...v0.9.5) - 2023-12-26
 
 ### Enhancement
 - Documentation.
+
 
 ## [v0.9.4](https://github.com/nfaiz/ci4-ifx/compare/v0.9.3...v0.9.4) - 2023-12-26
 
